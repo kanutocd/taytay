@@ -9,6 +9,65 @@ use std::{
     io::{Read, Seek, SeekFrom},
 };
 
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct UploadProgress {
+    pub transferred: u64,
+    pub total: u64,
+}
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct UploadReceipt {
+    pub upload_id: String,
+    pub transferred: u64,
+}
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum UploadError {
+    Retryable(String),
+    Unauthorized(String),
+    Expired(String),
+    Permanent(String),
+    Cancelled,
+}
+impl UploadError {
+    pub fn retryable(&self) -> bool {
+        matches!(self, Self::Retryable(_) | Self::Expired(_))
+    }
+}
+pub trait ArtifactUploader: Send + Sync {
+    fn upload(
+        &self,
+        artifact: &crate::Artifact,
+        job: &UploadJob,
+        progress: &mut dyn FnMut(UploadProgress),
+    ) -> Result<UploadReceipt, UploadError>;
+}
+
+pub fn upload_with_uploader<U: ArtifactUploader>(
+    spool: &Spool,
+    uploader: &U,
+    mut job: UploadJob,
+) -> Result<UploadJob, UploadError> {
+    spool
+        .verify(&job)
+        .map_err(|e| UploadError::Permanent(e.to_string()))?;
+    job.transition(ArtifactState::Uploading)
+        .map_err(|e| UploadError::Permanent(e.to_string()))?;
+    job.attempts += 1;
+    let mut transferred = job.offset;
+    let mut progress = |value: UploadProgress| {
+        transferred = value.transferred;
+    };
+    let receipt = uploader.upload(&job.artifact, &job, &mut progress)?;
+    job.server_url = Some(receipt.upload_id);
+    job.offset = receipt.transferred.max(transferred);
+    job.transition(ArtifactState::Completed)
+        .map_err(|e| UploadError::Permanent(e.to_string()))?;
+    spool
+        .ledger()
+        .update(job.clone())
+        .map_err(|e| UploadError::Permanent(e.to_string()))?;
+    Ok(job)
+}
+
 pub fn upload<C: LunsaranClient, T: TusClient>(
     spool: &Spool,
     client: &C,
@@ -90,6 +149,24 @@ mod tests {
     struct FakeTus {
         bytes: Arc<Mutex<Vec<u8>>>,
     }
+    struct FakeUploader;
+    impl ArtifactUploader for FakeUploader {
+        fn upload(
+            &self,
+            artifact: &crate::Artifact,
+            _: &UploadJob,
+            progress: &mut dyn FnMut(UploadProgress),
+        ) -> Result<UploadReceipt, UploadError> {
+            progress(UploadProgress {
+                transferred: artifact.size,
+                total: artifact.size,
+            });
+            Ok(UploadReceipt {
+                upload_id: "upload-1".into(),
+                transferred: artifact.size,
+            })
+        }
+    }
     impl TusClient for FakeTus {
         fn create(&self, _: &UploadSession, _: &crate::Artifact) -> Result<String, TaytayError> {
             Ok("tus://fake/1".into())
@@ -149,6 +226,33 @@ mod tests {
         .unwrap();
         assert_eq!(result.state, ArtifactState::Completed);
         assert_eq!(&*bytes.lock().unwrap(), b"payload");
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn uploader_port_updates_durable_job() {
+        let root = std::env::temp_dir().join(format!(
+            "taytay-port-{}",
+            SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        let spool = Spool::open(&root, 1024).unwrap();
+        let job = spool
+            .publish(
+                ArtifactId::new("one"),
+                SourceId::new("test"),
+                "x".into(),
+                b"payload",
+                None,
+                serde_json::json!({}),
+            )
+            .unwrap();
+        let completed = upload_with_uploader(&spool, &FakeUploader, job).unwrap();
+        assert_eq!(completed.state, ArtifactState::Completed);
+        assert_eq!(completed.server_url.as_deref(), Some("upload-1"));
+        assert_eq!(spool.ledger().pending().len(), 0);
         std::fs::remove_dir_all(root).unwrap();
     }
 }

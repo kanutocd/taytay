@@ -14,6 +14,8 @@ pub enum TaytayError {
     QuotaExceeded { requested: u64, available: u64 },
     #[error("protocol: {0}")]
     Protocol(String),
+    #[error("invalid URL: {0}")]
+    InvalidUrl(String),
     #[error("checksum mismatch: expected {expected}, got {actual}")]
     ChecksumMismatch { expected: String, actual: String },
     #[error(transparent)]

@@ -13,3 +13,4 @@
 - Added systemd least-privilege packaging, CI quality/coverage workflow, synthetic Lunsaran/TUS fixtures, security and operations runbooks, and source compatibility guidance.
 - Reviewed the entregar library and CLI boundary; Taytay now explicitly embeds the library behind an uploader port and tracks transfer-hardening gaps.
 - Recorded the identity boundary: Lunsaran owns device authentication and organization/project authorization; Taytay uses scoped device credentials and local buffering only.
+- Added Taytay's `ArtifactUploader` port, typed upload error classification, atomic checksum-bound resume records, and credential-bearing URL validation pending the external `entregar` library adapter.

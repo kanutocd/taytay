@@ -3,6 +3,19 @@ use std::{fs, path::Path};
 
 use crate::TaytayError;
 
+#[derive(Clone, Deserialize)]
+pub struct Secret(String);
+impl Secret {
+    pub fn expose(&self) -> &str {
+        &self.0
+    }
+}
+impl std::fmt::Debug for Secret {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str("[REDACTED]")
+    }
+}
+
 #[derive(Clone, Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Config {
@@ -52,8 +65,24 @@ impl Config {
                 "token_file must not contain parent traversal".into(),
             ));
         }
+        validate_base_url(&self.lunsaran_base_url)?;
         Ok(())
     }
+}
+
+pub fn validate_base_url(value: &str) -> Result<(), TaytayError> {
+    if !(value.starts_with("https://") || value.starts_with("http://"))
+        || value.contains('?')
+        || value.contains('#')
+        || value
+            .split_once("://")
+            .is_some_and(|(_, rest)| rest.contains('@'))
+    {
+        return Err(TaytayError::InvalidUrl(
+            "base URL must be an HTTP(S) origin without userinfo, query, or fragment".into(),
+        ));
+    }
+    Ok(())
 }
 
 #[cfg(test)]
@@ -66,6 +95,20 @@ mod tests {
             quota_bytes: 1,
             upload_workers: 0,
             lunsaran_base_url: "https://lunsaran".into(),
+            organization_id: "o".into(),
+            project_id: "p".into(),
+            token_file: "token".into(),
+        };
+        assert!(c.validate().is_err());
+    }
+
+    #[test]
+    fn rejects_credential_bearing_url() {
+        let c = Config {
+            spool_dir: "spool".into(),
+            quota_bytes: 1,
+            upload_workers: 1,
+            lunsaran_base_url: "https://user:pass@example.test".into(),
             organization_id: "o".into(),
             project_id: "p".into(),
             token_file: "token".into(),
