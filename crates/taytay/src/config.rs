@@ -10,6 +10,26 @@ impl Secret {
         &self.0
     }
 }
+pub fn load_secret_file(path: impl AsRef<Path>) -> Result<Secret, TaytayError> {
+    let path = path.as_ref();
+    let metadata = fs::metadata(path)?;
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        if metadata.permissions().mode() & 0o077 != 0 {
+            return Err(TaytayError::Configuration(
+                "credential file permissions must not grant access to group or other users".into(),
+            ));
+        }
+    }
+    let value = fs::read_to_string(path)?.trim().to_owned();
+    if value.is_empty() {
+        return Err(TaytayError::Configuration(
+            "credential file is empty".into(),
+        ));
+    }
+    Ok(Secret(value))
+}
 impl std::fmt::Debug for Secret {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str("[REDACTED]")
@@ -114,5 +134,16 @@ mod tests {
             token_file: "token".into(),
         };
         assert!(c.validate().is_err());
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn secret_loader_rejects_broad_permissions() {
+        use std::os::unix::fs::PermissionsExt;
+        let path = std::env::temp_dir().join(format!("taytay-secret-{}", std::process::id()));
+        fs::write(&path, "device-token").unwrap();
+        fs::set_permissions(&path, fs::Permissions::from_mode(0o644)).unwrap();
+        assert!(load_secret_file(&path).is_err());
+        fs::remove_file(path).unwrap();
     }
 }
