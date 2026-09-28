@@ -75,6 +75,20 @@ impl Ledger {
             .cloned()
             .collect()
     }
+    pub fn completed(&self) -> Vec<UploadJob> {
+        self.jobs
+            .lock()
+            .expect("ledger mutex poisoned")
+            .values()
+            .filter(|j| {
+                matches!(
+                    j.state,
+                    crate::model::ArtifactState::Completed | crate::model::ArtifactState::Retained
+                )
+            })
+            .cloned()
+            .collect()
+    }
 
     fn persist(&self, jobs: &BTreeMap<ArtifactId, UploadJob>) -> Result<(), TaytayError> {
         let tmp = self.path.with_extension("tmp");

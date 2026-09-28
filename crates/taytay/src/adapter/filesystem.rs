@@ -14,6 +14,7 @@ pub struct FilesystemAdapter {
     source: SourceId,
     directory: PathBuf,
     seen: std::collections::HashSet<PathBuf>,
+    observed: std::collections::HashMap<PathBuf, (u64, std::time::SystemTime)>,
 }
 
 impl FilesystemAdapter {
@@ -22,6 +23,7 @@ impl FilesystemAdapter {
             source,
             directory: directory.as_ref().into(),
             seen: Default::default(),
+            observed: Default::default(),
         }
     }
 }
@@ -39,6 +41,13 @@ impl SourceAdapter for FilesystemAdapter {
                 continue;
             }
             let metadata = entry.metadata()?;
+            let fingerprint = (
+                metadata.len(),
+                metadata.modified().unwrap_or(std::time::UNIX_EPOCH),
+            );
+            if self.observed.insert(path.clone(), fingerprint) != Some(fingerprint) {
+                continue;
+            }
             let mut file = fs::File::open(&path)?;
             let mut hasher = Sha256::new();
             let mut buf = [0; 64 * 1024];

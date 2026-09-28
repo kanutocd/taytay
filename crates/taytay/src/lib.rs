@@ -9,6 +9,7 @@ pub mod model;
 pub mod protocol;
 pub mod resume;
 pub mod retry;
+pub mod scheduler;
 pub mod spool;
 pub mod upload;
 

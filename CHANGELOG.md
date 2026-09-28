@@ -14,3 +14,4 @@
 - Reviewed the entregar library and CLI boundary; Taytay now explicitly embeds the library behind an uploader port and tracks transfer-hardening gaps.
 - Recorded the identity boundary: Lunsaran owns device authentication and organization/project authorization; Taytay uses scoped device credentials and local buffering only.
 - Added Taytay's `ArtifactUploader` port, typed upload error classification, atomic checksum-bound resume records, and credential-bearing URL validation pending the external `entregar` library adapter.
+- Added stable filesystem completion detection, cancellation-aware bounded scheduling, retry-delay access, completed-artifact cleanup, and related recovery tests.

@@ -96,6 +96,17 @@ impl Spool {
     pub fn ledger(&self) -> &Ledger {
         &self.ledger
     }
+    pub fn cleanup_completed(&self) -> Result<usize, TaytayError> {
+        let jobs = self.ledger.completed();
+        let mut removed = 0;
+        for job in jobs {
+            if Path::new(&job.artifact.path).exists() {
+                fs::remove_file(&job.artifact.path)?;
+                removed += 1;
+            }
+        }
+        Ok(removed)
+    }
     fn used_bytes(&self) -> Result<u64, TaytayError> {
         Ok(fs::read_dir(&self.root)?
             .filter_map(Result::ok)
