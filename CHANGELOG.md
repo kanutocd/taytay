@@ -20,3 +20,4 @@
 - Added protected device-credential file loading with strict Unix permissions, empty-secret rejection, and redacted secret debug behavior.
 - Added deterministic motion-event deduplication and RTSP stream-loss coverage for event-aware and network-camera state boundaries.
 - Added persisted failure transitions, retention policy primitives, health snapshots, and atomic operational counters for queue and source observability.
+- Added bounded V4L2/RTSP segment buffers, ONVIF profile selection, and validated drone/LiDAR sidecar metadata models.

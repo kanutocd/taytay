@@ -5,6 +5,19 @@ pub struct OnvifDevice {
     pub name: Option<String>,
     pub profile_tokens: Vec<String>,
 }
+impl OnvifDevice {
+    pub fn select_profile(&self, preferred: &[&str]) -> Option<&str> {
+        preferred
+            .iter()
+            .find_map(|wanted| {
+                self.profile_tokens
+                    .iter()
+                    .find(|token| token == wanted)
+                    .map(String::as_str)
+            })
+            .or_else(|| self.profile_tokens.first().map(String::as_str))
+    }
+}
 pub fn parse_probe(xml: &str) -> Result<OnvifDevice, TaytayError> {
     let endpoint = between(xml, "<XAddrs>", "</XAddrs>")
         .ok_or_else(|| TaytayError::Protocol("ONVIF probe has no XAddrs".into()))?;
@@ -51,5 +64,6 @@ mod tests {
         let d = parse_probe("<ProbeMatch><XAddrs>http://camera/onvif</XAddrs><Name>front</Name><Profile token=\"t1\"/></ProbeMatch>").unwrap();
         assert_eq!(d.endpoint, "http://camera/onvif");
         assert_eq!(d.profile_tokens, vec!["t1"]);
+        assert_eq!(d.select_profile(&["missing", "t1"]), Some("t1"));
     }
 }

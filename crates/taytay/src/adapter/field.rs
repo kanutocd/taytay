@@ -14,6 +14,32 @@ pub struct FieldFileAdapter {
     directory: PathBuf,
     extensions: Vec<String>,
 }
+#[derive(Clone, Debug, Default, PartialEq, serde::Deserialize, serde::Serialize)]
+pub struct FieldMetadata {
+    pub flight_id: Option<String>,
+    pub sensor_id: Option<String>,
+    pub captured_at: Option<String>,
+    pub latitude: Option<f64>,
+    pub longitude: Option<f64>,
+    pub altitude_m: Option<f64>,
+    pub coordinate_reference_system: Option<String>,
+    pub point_count: Option<u64>,
+    pub provenance: Option<String>,
+}
+impl FieldMetadata {
+    pub fn validate(&self) -> Result<(), TaytayError> {
+        if self.latitude.is_some_and(|x| !(-90.0..=90.0).contains(&x))
+            || self
+                .longitude
+                .is_some_and(|x| !(-180.0..=180.0).contains(&x))
+        {
+            return Err(TaytayError::Protocol(
+                "field coordinates are out of range".into(),
+            ));
+        }
+        Ok(())
+    }
+}
 impl FieldFileAdapter {
     pub fn new(source: SourceId, directory: impl AsRef<Path>, extensions: &[&str]) -> Self {
         Self {
@@ -59,5 +85,27 @@ impl FieldFileAdapter {
             });
         }
         Ok(artifacts)
+    }
+    pub fn metadata_from_sidecar(
+        &self,
+        path: impl AsRef<Path>,
+    ) -> Result<FieldMetadata, TaytayError> {
+        let metadata: FieldMetadata = serde_json::from_slice(&fs::read(path)?)
+            .map_err(|e| TaytayError::Protocol(e.to_string()))?;
+        metadata.validate()?;
+        Ok(metadata)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn metadata_rejects_invalid_coordinates() {
+        let m = FieldMetadata {
+            latitude: Some(91.0),
+            ..Default::default()
+        };
+        assert!(m.validate().is_err());
     }
 }
