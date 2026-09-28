@@ -21,3 +21,5 @@
 - Added deterministic motion-event deduplication and RTSP stream-loss coverage for event-aware and network-camera state boundaries.
 - Added persisted failure transitions, retention policy primitives, health snapshots, and atomic operational counters for queue and source observability.
 - Added bounded V4L2/RTSP segment buffers, ONVIF profile selection, and validated drone/LiDAR sidecar metadata models.
+- Added secret-free `--check-config` and `--status` CLI diagnostics for operator configuration and spool readiness.
+- Documented the current implementation boundary in `IMPLEMENTATION.md` and `README.md`, including completed software-only work and external/hardware blockers.

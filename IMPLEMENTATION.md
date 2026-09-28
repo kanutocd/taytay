@@ -2,6 +2,18 @@
 
 Statuses: **Planned**, **In progress**, **Implemented**, **Deferred**.
 
+## Current implementation status
+
+The following software-only foundation is implemented in the Rust workspace:
+
+- Phase 1 core contracts: domain types, configuration validation, source/uploader ports, fixtures, quality scripts, secret-file checks, and operator diagnostics.
+- Phase 2 local durability: atomic publication, stable-file detection, checksums, quota enforcement, restart recovery, bounded scheduling, cancellation, failure persistence, retention primitives, and completed-artifact cleanup.
+- Phase 3 transfer boundary: TUS session/offset/checksum validation and a fake-driven `ArtifactUploader` port. The concrete `entregar` implementation is blocked until the reviewed library source/version is supplied.
+- Source policy behavior: filesystem/NVR completion detection, V4L2/RTSP bounded segment buffers, reconnect state, ONVIF profile selection, event deduplication, and validated drone/LiDAR sidecar metadata.
+- Operations: systemd packaging, redacted diagnostics, health snapshots, counters, coverage, and CLI `--check-config`/`--status` commands.
+
+Live protocol clients, hardware capture, vendor interoperability, external service acceptance tests, and the `entregar` adapter remain planned or blocked because they require external libraries, devices, or services.
+
 Dates below are target release dates for planning and sequencing, not commitments. Each milestone is cumulative: later releases retain the earlier adapters and guarantees.
 
 ## Milestone schedule

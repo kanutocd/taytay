@@ -6,7 +6,7 @@ The first source adapter targets existing CCTV/NVR installations. The core remai
 
 ## Project status
 
-The `0.0.1` harness and durable local/upload foundation are implemented. Source-specific hardware integrations remain behind typed boundaries and require device acceptance testing before production release.
+The `0.0.1` harness and durable local/upload foundation are implemented, including operator diagnostics, secure resume state, bounded source segmenting, event deduplication, and health counters. Source-specific hardware integrations, live service clients, and the `entregar` adapter remain behind typed boundaries and require external libraries, devices, or acceptance fixtures before production release.
 
 The service validates TOML configuration, publishes artifacts atomically into a quota-bounded spool, persists resumable jobs, verifies SHA-256 checksums, and exposes source/control-plane/TUS seams for local fixtures. See [operations](docs/OPERATIONS.md), [security](docs/SECURITY.md), and [compatibility](docs/COMPATIBILITY.md).
 
