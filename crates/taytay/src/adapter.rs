@@ -12,4 +12,8 @@ pub trait ArtifactReader: Send + Sync {
     fn open(&self, artifact: &Artifact) -> Result<Box<dyn std::io::Read + Send>, TaytayError>;
 }
 
+pub mod field;
 pub mod filesystem;
+pub mod onvif;
+pub mod rtsp;
+pub mod v4l2;
