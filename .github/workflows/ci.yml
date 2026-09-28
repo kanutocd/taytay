@@ -21,4 +21,3 @@ jobs:
         uses: taiki-e/install-action@cargo-llvm-cov
       - run: scripts/coverage.sh
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-

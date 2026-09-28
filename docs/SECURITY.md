@@ -6,4 +6,3 @@
 - Source metadata is treated as sensitive by default; operators should use opaque source IDs and avoid filenames when names reveal customer information.
 - The service runs unprivileged with a read-only system filesystem and a narrowly scoped writable spool.
 - Idempotency keys use the durable artifact ID, preventing retries from creating a second upload session for the same publication.
-

@@ -10,4 +10,3 @@
 | LAS/LAZ LiDAR | extension/checksum adapter | sensor/CRS acceptance | File boundary implemented |
 
 Hardware acceptance must record Linux version, device model, firmware, codec/pixel format, network conditions, reconnect result, and artifact checksum. Credentials and customer metadata must not be included.
-

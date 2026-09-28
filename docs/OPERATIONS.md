@@ -25,4 +25,3 @@ Set `quota_bytes` below the filesystem capacity, leave room for the ledger and o
 ## Upgrades and rollback
 
 Stop the service, replace the binary, run configuration validation, and start the service. Keep the previous binary available for rollback. Never replace or remove `/var/lib/taytay` during an upgrade.
-
