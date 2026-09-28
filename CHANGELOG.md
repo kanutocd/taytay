@@ -8,3 +8,4 @@
 - Added a deferred field-source milestone for drone media/MAVLink metadata and LiDAR LAS/LAZ ingestion.
 - Added the quality and coverage harness, reusable scripts, staged thresholds, test layers, and CI artifact requirements.
 - Added the stable Rust workspace, validated configuration model, artifact/job lifecycle types, source and uploader traits, atomic spool publication, SHA-256 checksums, and restart-recoverable ledger.
+- Added resumable TUS offset reconciliation, bounded queue/backoff primitives, redacted URL diagnostics, and deterministic control-plane/TUS upload tests.

@@ -2,10 +2,12 @@
 
 pub mod adapter;
 pub mod config;
+pub mod diagnostics;
 pub mod error;
 pub mod ledger;
 pub mod model;
 pub mod protocol;
+pub mod retry;
 pub mod spool;
 pub mod upload;
 
