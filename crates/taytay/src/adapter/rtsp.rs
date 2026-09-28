@@ -50,3 +50,17 @@ impl RtspAdapter {
         self.reconnects
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn stream_loss_enters_reconnect_state() {
+        let mut adapter = RtspAdapter::new(SourceId::new("cam"), "rtsp://camera/stream").unwrap();
+        adapter.begin();
+        adapter.healthy();
+        adapter.lost();
+        assert_eq!(adapter.state(), &StreamState::Reconnecting);
+        assert_eq!(adapter.reconnects(), 1);
+    }
+}

@@ -4,6 +4,7 @@ pub mod adapter;
 pub mod config;
 pub mod diagnostics;
 pub mod error;
+pub mod events;
 pub mod ledger;
 pub mod model;
 pub mod protocol;
