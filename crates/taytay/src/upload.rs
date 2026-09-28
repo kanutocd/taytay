@@ -4,6 +4,7 @@ use crate::{
     protocol::{LunsaranClient, TusClient},
     spool::Spool,
 };
+use sha2::{Digest, Sha256};
 use std::{
     fs::File,
     io::{Read, Seek, SeekFrom},
@@ -85,8 +86,15 @@ pub fn upload<C: LunsaranClient, T: TusClient>(
         project_id,
         &job.artifact.id.0,
     )?;
+    session.validate_for(organization_id, project_id)?;
     let upload_url = tus.create(&session, &job.artifact)?;
-    let mut offset = tus.head(&upload_url)?.offset;
+    let head = tus.head(&upload_url)?;
+    if head.offset > job.artifact.size || head.length != job.artifact.size {
+        return Err(TaytayError::Protocol(
+            "TUS HEAD offset or length is invalid".into(),
+        ));
+    }
+    let mut offset = head.offset;
     let mut file = File::open(&job.artifact.path)?;
     file.seek(SeekFrom::Start(offset))?;
     let chunk_size = session.chunk_size.max(1) as usize;
@@ -96,12 +104,13 @@ pub fn upload<C: LunsaranClient, T: TusClient>(
         if n == 0 {
             break;
         }
-        let result = tus.patch(
-            &upload_url,
-            offset,
-            &buf[..n],
-            job.artifact.checksum_sha256.as_deref(),
-        )?;
+        let checksum = if session.checksum_algorithm.as_deref() == Some("sha256") {
+            Some(hex(&Sha256::digest(&buf[..n])))
+        } else {
+            None
+        };
+        let result = tus.patch(&upload_url, offset, &buf[..n], checksum.as_deref())?;
+        crate::protocol::validate_offset(offset, &result, n as u64, job.artifact.size)?;
         offset = result.offset;
     }
     job.server_url = Some(upload_url);
@@ -110,6 +119,10 @@ pub fn upload<C: LunsaranClient, T: TusClient>(
     client.report_state(&job.artifact, "completed")?;
     spool.ledger().update(job.clone())?;
     Ok(job)
+}
+
+fn hex(bytes: &[u8]) -> String {
+    bytes.iter().map(|b| format!("{b:02x}")).collect()
 }
 
 #[cfg(test)]

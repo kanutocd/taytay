@@ -9,6 +9,20 @@ pub struct UploadSession {
     pub chunk_size: u64,
     pub checksum_algorithm: Option<String>,
 }
+impl UploadSession {
+    pub fn validate_for(&self, organization_id: &str, project_id: &str) -> Result<(), TaytayError> {
+        if self.organization_id != organization_id
+            || self.project_id != project_id
+            || self.upload_url.is_empty()
+            || self.chunk_size == 0
+        {
+            return Err(TaytayError::Protocol(
+                "upload session is missing scope or transfer capabilities".into(),
+            ));
+        }
+        Ok(())
+    }
+}
 pub trait LunsaranClient: Send + Sync {
     fn create_upload_session(
         &self,
@@ -34,6 +48,26 @@ pub trait TusClient: Send + Sync {
         chunk: &[u8],
         checksum_sha256: Option<&str>,
     ) -> Result<TusOffset, TaytayError>;
+}
+
+pub fn validate_offset(
+    previous: u64,
+    returned: &TusOffset,
+    sent: u64,
+    length: u64,
+) -> Result<(), TaytayError> {
+    let expected = previous.saturating_add(sent);
+    if returned.offset != expected
+        || returned.offset < previous
+        || returned.offset > length
+        || returned.length != length
+    {
+        return Err(TaytayError::Protocol(format!(
+            "invalid TUS offset response: expected {expected}, got {}",
+            returned.offset
+        )));
+    }
+    Ok(())
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -80,5 +114,18 @@ mod tests {
         assert_eq!(r.authorization, "Bearer secret");
         assert_eq!(r.body["organization_id"], "org");
         assert_eq!(r.body["project_id"], "project");
+    }
+    #[test]
+    fn rejects_non_monotonic_offset() {
+        let result = validate_offset(
+            4,
+            &TusOffset {
+                offset: 3,
+                length: 7,
+            },
+            2,
+            7,
+        );
+        assert!(result.is_err());
     }
 }

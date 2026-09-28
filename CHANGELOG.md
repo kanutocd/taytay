@@ -16,3 +16,4 @@
 - Added Taytay's `ArtifactUploader` port, typed upload error classification, atomic checksum-bound resume records, and credential-bearing URL validation pending the external `entregar` library adapter.
 - Added stable filesystem completion detection, cancellation-aware bounded scheduling, retry-delay access, completed-artifact cleanup, and related recovery tests.
 - Added component coverage for stable NVR file observation and cleanup only after durable upload completion.
+- Added upload-session scope validation, TUS offset conformance checks, and per-chunk SHA-256 propagation.
