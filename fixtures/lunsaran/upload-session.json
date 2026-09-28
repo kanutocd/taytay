@@ -1,0 +1,9 @@
+{
+  "upload_url": "https://brutus.example.invalid/tus/session-opaque",
+  "expires_at": "2027-01-15T00:00:00Z",
+  "organization_id": "org-fixture",
+  "project_id": "project-fixture",
+  "chunk_size": 1048576,
+  "checksum_algorithm": "sha256"
+}
+

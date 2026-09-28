@@ -10,3 +10,4 @@
 - Added the stable Rust workspace, validated configuration model, artifact/job lifecycle types, source and uploader traits, atomic spool publication, SHA-256 checksums, and restart-recoverable ledger.
 - Added resumable TUS offset reconciliation, bounded queue/backoff primitives, redacted URL diagnostics, and deterministic control-plane/TUS upload tests.
 - Added typed filesystem/NVR, V4L2 reconnect, RTSP stream-health, ONVIF discovery, and drone/LiDAR field-file adapter primitives with deterministic protocol coverage.
+- Added systemd least-privilege packaging, CI quality/coverage workflow, synthetic Lunsaran/TUS fixtures, security and operations runbooks, and source compatibility guidance.

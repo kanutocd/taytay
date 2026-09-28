@@ -1,0 +1,25 @@
+[Unit]
+Description=Taytay edge bridge
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=taytay
+Group=taytay
+ExecStart=/usr/local/bin/taytay /etc/taytay/taytay.toml
+Restart=on-failure
+RestartSec=10s
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/taytay /var/log/taytay
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+CapabilityBoundingSet=
+AmbientCapabilities=
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target
+
