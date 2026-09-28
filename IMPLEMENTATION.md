@@ -27,9 +27,13 @@ A `1.0.0` date is intentionally not set until the beta candidate has completed f
 - Create the Rust workspace and Linux service binary.
 - Define `Artifact`, `SourceId`, `UploadJob`, and lifecycle state types.
 - Define adapter and uploader traits with explicit error types.
+- Add a Taytay `ArtifactUploader` port and an `entregar`-backed implementation; keep `entregar-cli` out of the runtime dependency graph.
 - Document supported Linux versions, configuration, and secret sources.
+- Define the Lunsaran device/workload credential contract: enrollment, scope, expiry, rotation, revocation, and audit.
+- Explicitly exclude replicated user authentication, organization/project RBAC, and provider credentials from Taytay.
 - Add contract fixtures for Lunsaran upload-session responses and TUS behavior.
 - Add the quality and coverage scripts, report formats, and staged coverage thresholds.
+- Pin and review the selected `entregar` library version against the shared conformance matrix.
 
 ## Phase 2 — Durable spool and ledger (Planned)
 
@@ -38,18 +42,24 @@ A `1.0.0` date is intentionally not set until the beta candidate has completed f
 - Implement atomic artifact publication and disk quotas.
 - Persist jobs, checksums, attempts, server URLs, offsets, and terminal state.
 - Recover pending jobs after restart and prevent duplicate publication.
+- Continue local capture while Lunsaran is unavailable without making local authorization decisions.
 - Add bounded queueing, backpressure, retention, and cleanup rules.
 - Test power-loss-like interruption and database/filesystem recovery.
 
 ## Phase 3 — Lunsaran and TUS upload path (Planned)
 
+The implementation uses the `entregar` library through Taytay's upload port. Taytay does not shell out to the `entregar` CLI.
+
 **Deliverables:** the `0.3.0` upload preview, including a working transfer path against local Lunsaran, Brutus, and MinIO/S3 fixtures.
 
-- Implement authenticated Lunsaran control-plane client.
-- Create scoped upload sessions for organization and project context.
-- Implement TUS creation, `HEAD` offset recovery, `PATCH` chunk transfer, retries, and resume.
-- Verify no provider credentials or signed session contents enter logs.
+- Implement the `entregar`-backed `ArtifactUploader`.
+- Create scoped upload sessions for organization and project context through the library.
+- Use a stable job-derived idempotency key and Taytay-managed per-job resume state.
+- Implement Taytay retry classification, scheduling, and cancellation around the library transfer.
+- Verify no provider credentials, device credentials, human credentials, or signed session contents enter logs.
+- Verify platform authorization failures stop new session creation while preserving queued artifacts.
 - Add end-to-end tests against local Lunsaran, Brutus, and MinIO/S3 fixtures.
+- Track the library hardening findings in `docs/ENTREGAR_INTEGRATION_REVIEW.md` before beta acceptance.
 
 ## Phase 4 — File and local-camera source adapters (Planned)
 
@@ -95,6 +105,8 @@ A `1.0.0` date is intentionally not set until the beta candidate has completed f
 **Deliverables:** the `0.7.0` beta candidate operational package.
 
 - Add systemd unit, least-privilege service account, protected directories, and rotation guidance.
+- Add device-credential rotation, revocation, expiry, and offline-recovery runbooks.
+- Keep any local administration authentication separate from Lunsaran identity and RBAC.
 - Add health/readiness endpoints or local diagnostics without exposing secrets.
 - Publish CI quality and coverage artifacts with redaction checks.
 - Add metrics, structured redacted logs, tracing, and disk/network alerts.

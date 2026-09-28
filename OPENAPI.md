@@ -8,7 +8,7 @@ Taytay is initially an outbound Linux edge client. Its primary external contract
 2. Brutus's TUS 1.0 endpoint for resumable byte transfer.
 3. Source protocols such as ONVIF, RTSP/RTP, V4L2, filesystem APIs, and vendor APIs.
 
-Taytay must not invent a second upload protocol or call object-storage providers directly.
+Taytay must not invent a second identity/RBAC system, upload protocol, or provider integration. It must not call object-storage providers directly. Lunsaran authenticates the Taytay device identity, evaluates organization/project authorization, and issues scoped upload sessions.
 
 ## REST/OpenAPI rules for any future local API
 
@@ -36,7 +36,7 @@ These are not implemented or committed as a public contract yet. Local access mu
 
 ## Lunsaran integration requirements
 
-The generated client must be pinned to a reviewed Lunsaran OpenAPI version. Upload-session responses must provide a scoped Brutus URL, expiry, organization/project binding, and protocol capabilities without exposing provider credentials.
+The generated client must be pinned to a reviewed Lunsaran OpenAPI version. The Taytay credential is a Lunsaran-issued device/workload credential with explicit scope, expiry, rotation, and revocation behavior; a human user credential is not the device identity. Upload-session responses must provide a scoped Brutus URL, expiry, organization/project binding, and protocol capabilities without exposing provider credentials.
 
 ## TUS requirements
 

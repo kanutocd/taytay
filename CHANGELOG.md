@@ -11,3 +11,5 @@
 - Added resumable TUS offset reconciliation, bounded queue/backoff primitives, redacted URL diagnostics, and deterministic control-plane/TUS upload tests.
 - Added typed filesystem/NVR, V4L2 reconnect, RTSP stream-health, ONVIF discovery, and drone/LiDAR field-file adapter primitives with deterministic protocol coverage.
 - Added systemd least-privilege packaging, CI quality/coverage workflow, synthetic Lunsaran/TUS fixtures, security and operations runbooks, and source compatibility guidance.
+- Reviewed the entregar library and CLI boundary; Taytay now explicitly embeds the library behind an uploader port and tracks transfer-hardening gaps.
+- Recorded the identity boundary: Lunsaran owns device authentication and organization/project authorization; Taytay uses scoped device credentials and local buffering only.
