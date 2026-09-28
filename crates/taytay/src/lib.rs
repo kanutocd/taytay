@@ -7,6 +7,7 @@ pub mod error;
 pub mod events;
 pub mod ledger;
 pub mod model;
+pub mod operations;
 pub mod protocol;
 pub mod resume;
 pub mod retry;

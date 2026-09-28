@@ -19,3 +19,4 @@
 - Added upload-session scope validation, TUS offset conformance checks, and per-chunk SHA-256 propagation.
 - Added protected device-credential file loading with strict Unix permissions, empty-secret rejection, and redacted secret debug behavior.
 - Added deterministic motion-event deduplication and RTSP stream-loss coverage for event-aware and network-camera state boundaries.
+- Added persisted failure transitions, retention policy primitives, health snapshots, and atomic operational counters for queue and source observability.

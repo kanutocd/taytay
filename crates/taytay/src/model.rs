@@ -99,4 +99,10 @@ impl UploadJob {
             })
         }
     }
+
+    pub fn fail(&mut self, error: impl Into<String>) -> Result<(), crate::TaytayError> {
+        self.transition(ArtifactState::Failed)?;
+        self.last_error = Some(error.into());
+        Ok(())
+    }
 }

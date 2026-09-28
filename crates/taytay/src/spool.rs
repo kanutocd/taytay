@@ -115,6 +115,10 @@ impl Spool {
             .map(|m| m.len())
             .sum())
     }
+
+    pub fn bytes_used(&self) -> Result<u64, TaytayError> {
+        self.used_bytes()
+    }
 }
 
 fn hex(bytes: &[u8]) -> String {
