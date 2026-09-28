@@ -86,3 +86,30 @@ fn mime_for(path: &Path) -> String {
     }
     .into()
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::{
+        fs,
+        time::{SystemTime, UNIX_EPOCH},
+    };
+    #[test]
+    fn emits_only_after_two_stable_observations() {
+        let root = std::env::temp_dir().join(format!(
+            "taytay-files-{}",
+            SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        fs::create_dir_all(&root).unwrap();
+        fs::write(root.join("clip.mp4"), b"clip").unwrap();
+        let mut adapter = FilesystemAdapter::new(SourceId::new("nvr"), &root);
+        assert!(adapter.poll().unwrap().is_empty());
+        let found = adapter.poll().unwrap();
+        assert_eq!(found.len(), 1);
+        assert_eq!(found[0].media_type, "video/mp4");
+        fs::remove_dir_all(root).unwrap();
+    }
+}

@@ -174,4 +174,26 @@ mod tests {
         ));
         fs::remove_dir_all(root).unwrap();
     }
+
+    #[test]
+    fn cleanup_removes_only_completed_artifacts() {
+        let root = temp_root();
+        let spool = Spool::open(&root, 1024).unwrap();
+        let mut job = spool
+            .publish(
+                ArtifactId::new("one"),
+                crate::SourceId::new("test"),
+                "x".into(),
+                b"payload",
+                None,
+                serde_json::json!({}),
+            )
+            .unwrap();
+        assert_eq!(spool.cleanup_completed().unwrap(), 0);
+        job.transition(crate::ArtifactState::Uploading).unwrap();
+        job.transition(crate::ArtifactState::Completed).unwrap();
+        spool.ledger().update(job).unwrap();
+        assert_eq!(spool.cleanup_completed().unwrap(), 1);
+        fs::remove_dir_all(root).unwrap();
+    }
 }

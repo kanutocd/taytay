@@ -15,3 +15,4 @@
 - Recorded the identity boundary: Lunsaran owns device authentication and organization/project authorization; Taytay uses scoped device credentials and local buffering only.
 - Added Taytay's `ArtifactUploader` port, typed upload error classification, atomic checksum-bound resume records, and credential-bearing URL validation pending the external `entregar` library adapter.
 - Added stable filesystem completion detection, cancellation-aware bounded scheduling, retry-delay access, completed-artifact cleanup, and related recovery tests.
+- Added component coverage for stable NVR file observation and cleanup only after durable upload completion.
