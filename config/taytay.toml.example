@@ -1,0 +1,8 @@
+spool_dir = "/var/lib/taytay/spool"
+quota_bytes = 10737418240
+upload_workers = 2
+lunsaran_base_url = "https://lunsaran.example.invalid"
+organization_id = "org-example"
+project_id = "project-example"
+token_file = "/etc/taytay/lunsaran.token"
+
