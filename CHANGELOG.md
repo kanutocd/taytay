@@ -4,6 +4,8 @@
 
 ### Public integrator boundary
 
+- Documented the Hiligaynon origin of “Taytay” as “bridge” in the README and
+  Zensical overview.
 - Made the Zensical SVG logo adapt to light and dark color schemes, matching
   the theme-aware README branding.
 - Refocused the root README on crate consumers and added light/dark theme logo

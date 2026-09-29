@@ -23,6 +23,9 @@ cameras, NVRs, files, drones, or LiDAR. Taytay is not a hosted camera platform:
 Lunsaran owns identity and project authorization, while Brutus owns TUS byte
 transfer and provider execution.
 
+*Taytay* is a Hiligaynon word for “bridge”, describing the crate’s role between
+edge sources and the Lunsaran platform.
+
 ## Add Taytay
 
 ```toml

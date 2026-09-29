@@ -22,6 +22,11 @@ The public crate owns edge durability and transfer orchestration. Lunsaran owns
 identity, organization/project authorization, and upload-session policy. Brutus
 owns the TUS data plane and provider execution.
 
+## The name
+
+*Taytay* is a Hiligaynon word for “bridge”. The name reflects the crate’s role
+connecting edge sources and durable local state to the Lunsaran platform.
+
 ```mermaid
 flowchart LR
     source[Camera, NVR, file, drone, or LiDAR source]
