@@ -4,6 +4,7 @@
 
 ### Public integrator boundary
 
+- Made the Apache-2.0 license copyright holder explicit as Kenneth C. Demanawa.
 - Documented the Hiligaynon origin of “Taytay” as “bridge” in the README and
   Zensical overview.
 - Made the Zensical SVG logo adapt to light and dark color schemes, matching
