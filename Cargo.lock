@@ -672,6 +672,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "lunsaran-taytay"
+version = "0.1.0"
+dependencies = [
+ "lunsaran-entregar",
+ "lunsaran-entregar-mock",
+ "serde",
+ "serde_json",
+ "sha2",
+ "thiserror",
+ "tokio",
+ "toml",
+ "uuid",
+]
+
+[[package]]
 name = "matchit"
 version = "0.8.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1127,21 +1142,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 3.0.6",
-]
-
-[[package]]
-name = "taytay"
-version = "0.1.0"
-dependencies = [
- "lunsaran-entregar",
- "lunsaran-entregar-mock",
- "serde",
- "serde_json",
- "sha2",
- "thiserror",
- "tokio",
- "toml",
- "uuid",
 ]
 
 [[package]]

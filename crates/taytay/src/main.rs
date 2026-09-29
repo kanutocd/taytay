@@ -1,5 +1,5 @@
+use lunsaran_taytay::{ArtifactId, config::Config, operations::HealthSnapshot, spool::Spool};
 use std::{env, process::ExitCode};
-use taytay::{ArtifactId, config::Config, operations::HealthSnapshot, spool::Spool};
 
 fn main() -> ExitCode {
     let mut args = env::args().skip(1);

@@ -30,7 +30,7 @@ edge sources and the Lunsaran platform.
 
 ```toml
 [dependencies]
-taytay = "0.0.1"
+lunsaran-taytay = "0.1.0"
 ```
 
 The crate gives integrators:

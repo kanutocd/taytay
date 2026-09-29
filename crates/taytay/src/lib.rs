@@ -11,7 +11,7 @@
 //! ledger preserves recovery state across process restarts.
 //!
 //! ```
-//! use taytay::{Artifact, ArtifactId, SourceId, UploadJob};
+//! use lunsaran_taytay::{Artifact, ArtifactId, SourceId, UploadJob};
 //!
 //! let artifact = Artifact {
 //!     id: ArtifactId::new("camera-clip-001"),

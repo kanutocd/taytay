@@ -1,11 +1,11 @@
 # Changelog
 
-## Unreleased
-
 ## 0.1.0 - 2026-09-29
 
 - First public Taytay crate release: durable Linux edge ingestion and
   resumable Lunsaran uploads.
+- Renamed the publishable crate from `taytay` to `lunsaran-taytay`; the
+  installed service and `taytay` binary name remain unchanged.
 
 - Added consumer-focused rustdoc across the public Taytay crate API, including
   lifecycle invariants, security boundaries, adapter contracts, protocol

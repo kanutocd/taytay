@@ -7,12 +7,12 @@ description: Add Taytay to a Rust edge integrator
 
 ## Add the crate
 
-The public workspace currently publishes the `taytay` crate as the reusable
+The public workspace publishes the `lunsaran-taytay` crate as the reusable
 edge boundary. Pin the version selected by your integration review:
 
 ```toml
 [dependencies]
-taytay = "0.0.1"
+lunsaran-taytay = "0.1.0"
 ```
 
 The reference uploader uses the published `lunsaran-entregar` client. Your
@@ -26,7 +26,7 @@ publishes the final artifact, computes SHA-256, and inserts a pending ledger
 job.
 
 ```rust
-use taytay::{ArtifactId, SourceId, spool::Spool};
+use lunsaran_taytay::{ArtifactId, SourceId, spool::Spool};
 
 let spool = Spool::open("./var/taytay-spool", 10 * 1024 * 1024 * 1024)?;
 let job = spool.publish(
