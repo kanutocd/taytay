@@ -24,6 +24,10 @@ Build a dependable Linux edge bridge that turns source media and metadata into d
 - Never log credentials, tokens, signed URLs, media payloads, or sensitive source metadata.
 - Prefer established protocols: ONVIF, RTSP/RTP, V4L2, filesystem APIs, HTTPS, and TUS.
 - Add API or event contract changes to `OPENAPI.md` and an ADR before implementation.
+- The private architecture, implementation, API-contract, quality, and
+  `lunsaran-entregar` integration harness is maintained in the companion
+  `taytay-saas/docs/taytay-linux-edge-bridge` repository; keep public crate
+  documentation and source contracts self-contained.
 
 ## Required checks
 

@@ -2,6 +2,19 @@
 
 ## Unreleased
 
+### Public integrator boundary
+
+- Refined Taytay as a first-party Lunsaran integrator built on the public
+  `lunsaran-entregar` client library.
+- Documented the Apache-2.0 public-core direction, OEM/third-party adoption
+  path, scoped device credentials, and private SaaS extension boundary.
+- Documented the public Taytay workspace and separate private SaaS boundary;
+  the future SaaS product will consume published Taytay crates.
+- Moved the private architecture, implementation, API-contract, quality, and
+  `lunsaran-entregar` integration harness into the companion SaaS repository;
+  public operational, security, compatibility, and release documentation stays
+  with the public workspace.
+
 - Established the Taytay project harness: architecture, ADRs, implementation phases, agent instructions, and API contract boundaries.
 - Added target release milestones with explicit deliverables and adapter sequencing.
 - Added the USB/V4L2 camera adapter as the first direct-device source after filesystem/NVR ingestion.
