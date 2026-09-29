@@ -48,9 +48,11 @@ publication fails with a quota error; Taytay does not delete pending work to
 make room. Cleanup should run only after completion and an explicit retention
 policy.
 
-Cancellation stops new work at the scheduler boundary. The public
-`lunsaran-entregar` 0.1.0 boundary supports pre-flight cancellation checks;
-in-flight cancellation semantics depend on a future client API revision.
+Cancellation stops new work at the scheduler boundary and can cancel an
+in-flight upload through the `lunsaran-entregar` 0.1.1 cancellation token.
+Pause/resume remains a separate product-level operation: cancellation leaves
+the durable job available for a later retry, while pause policy and controls
+must be defined by the application scheduler.
 
 ## What to test in your integration
 

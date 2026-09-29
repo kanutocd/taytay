@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Adopt the published `lunsaran-entregar` and `lunsaran-entregar-mock` 0.1.1
+  releases, including checksum propagation, protocol validation, retries,
+  atomic resume state, and in-flight cancellation.
+- Update upload and durability documentation for the 0.1.1 client boundary.
+
 ### Public integrator boundary
 
 - Added true in-flight cancellation at the Taytay uploader boundary and

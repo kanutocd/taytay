@@ -177,6 +177,7 @@ impl ArtifactUploader for EntregarUploader {
                         project_id: self.project_id,
                         content_type: Some(artifact.media_type.clone()),
                         idempotency_key: Some(job.artifact.id.0.clone()),
+                        checksum_sha256: artifact.checksum_sha256.clone(),
                         resume_state: Some(state_path.clone()),
                     },
                     |value| {
@@ -217,6 +218,7 @@ fn map_entregar_error(error: lunsaran_entregar::Error) -> UploadError {
         Error::Resume(message) => UploadError::Permanent(format!("resume state: {message}")),
         Error::Configuration(message) | Error::Response(message) => UploadError::Permanent(message),
         Error::File(message) => UploadError::Permanent(message.to_string()),
+        Error::Cancelled => UploadError::Cancelled,
     }
 }
 

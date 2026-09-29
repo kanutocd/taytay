@@ -644,15 +644,16 @@ checksum = "4050469837a6ff301cd14c1f8f24f88549e6d548f24f64e2148eb0f72cebc51f"
 
 [[package]]
 name = "lunsaran-entregar"
-version = "0.1.0"
+version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "33fe78b2cbc367973a94741e89de5e576de8998bab52af113bd93e3f70695ed2"
+checksum = "34ba713c375d888e1a450faeaf6af9cd16b4251046b32699323390d0bcd8e3e0"
 dependencies = [
  "base64 0.22.1",
  "chrono",
  "reqwest",
  "serde",
  "serde_json",
+ "sha2",
  "thiserror",
  "tokio",
  "uuid",
@@ -660,9 +661,9 @@ dependencies = [
 
 [[package]]
 name = "lunsaran-entregar-mock"
-version = "0.1.0"
+version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "354e6ab3b37ece02d91bfa7af886bbd612871b611b3a5fc4cc0bd149c21cade7"
+checksum = "86222fd3f2bafb3d438e248d862aa989d4e0d8a7949b72bf42b17c3370773013"
 dependencies = [
  "axum",
  "serde_json",

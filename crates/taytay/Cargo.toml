@@ -21,9 +21,9 @@ serde_json.workspace = true
 sha2.workspace = true
 thiserror.workspace = true
 toml.workspace = true
-lunsaran-entregar = "=0.1.0"
+lunsaran-entregar = "=0.1.1"
 tokio.workspace = true
 uuid.workspace = true
 
 [dev-dependencies]
-lunsaran-entregar-mock = "=0.1.0"
+lunsaran-entregar-mock = "=0.1.1"

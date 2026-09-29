@@ -61,8 +61,7 @@ ID instead.
 
 ## Checksum boundary
 
-Taytay verifies the local SHA-256 before transfer and propagates checksum data
-through its lower-level protocol contract when available. The published
-`lunsaran-entregar` 0.1.0 adapter does not yet expose remote checksum metadata
-in its upload options, so end-to-end server-side checksum confirmation remains
-a client API evolution item.
+Taytay verifies the local SHA-256 before transfer and propagates it through the
+published `lunsaran-entregar` 0.1.1 session request. The Lunsaran service must
+still enforce and report the checksum according to its deployed upload-session
+contract; verify that behavior in the hosted acceptance environment.
