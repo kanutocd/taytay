@@ -4,6 +4,9 @@ version = "0.0.1"
 edition.workspace = true
 license.workspace = true
 rust-version.workspace = true
+description = "Durable Linux edge bridge for resumable Lunsaran uploads"
+repository = "https://github.com/kanutocd/taytay"
+readme = "../../README.md"
 
 [lib]
 path = "src/lib.rs"

@@ -12,6 +12,17 @@ systemctl enable --now taytay
 systemctl status taytay
 ```
 
+For a non-mutating configuration check and machine-readable local readiness:
+
+```text
+taytay --check-config /etc/taytay/taytay.toml
+taytay --status /etc/taytay/taytay.toml
+```
+
+The library also exposes redacted Prometheus-compatible counters for uploads,
+retries, transferred bytes, and source errors. Do not attach credentials,
+signed URLs, filenames, or media content as metric labels.
+
 ## Offline and restart behavior
 
 Source publication completes before an artifact enters the upload ledger. The ledger is atomically rewritten and each artifact is checksum-verified before transfer. On restart, pending jobs are recovered from `ledger.jsonl`; the TUS server offset is authoritative.
@@ -25,3 +36,10 @@ Set `quota_bytes` below the filesystem capacity, leave room for the ledger and o
 ## Upgrades and rollback
 
 Stop the service, replace the binary, run configuration validation, and start the service. Keep the previous binary available for rollback. Never replace or remove `/var/lib/taytay` during an upgrade.
+
+## Deterministic acceptance
+
+Run `scripts/acceptance-mock.sh` to exercise the published
+`lunsaran-entregar` client against its local mock, including transient PATCH
+failure and stale-offset recovery. This test does not contact hosted Lunsaran,
+Brutus, or object storage.

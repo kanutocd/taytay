@@ -4,6 +4,8 @@
 
 ### Public integrator boundary
 
+- Added public crate metadata and README linkage so `taytay` packages with
+  discoverable release information.
 - Refined Taytay as a first-party Lunsaran integrator built on the public
   `lunsaran-entregar` client library.
 - Documented the Apache-2.0 public-core direction, OEM/third-party adoption
@@ -42,3 +44,4 @@
 - Added deterministic event-to-capture windows, ONVIF event parsing, V4L2 format negotiation, RTSP timestamp/codec validation, and field sidecar metadata association.
 - Added explicit device-credential enrollment, activation, rotation, revocation, expiry, and authorization gating for new upload sessions.
 - Added Prometheus-compatible redacted metrics output, CI coverage artifact retention, and a standalone mock acceptance command.
+- Documented operator status, metrics, and deterministic mock-acceptance procedures.
