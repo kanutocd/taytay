@@ -37,3 +37,4 @@
 - Added secret-free `--check-config` and `--status` CLI diagnostics for operator configuration and spool readiness.
 - Documented the current implementation boundary in `IMPLEMENTATION.md` and `README.md`, including completed software-only work and external/hardware blockers.
 - Implemented the secret-free CLI diagnostics described by the implementation boundary.
+- Pinned and integrated `lunsaran-entregar` 0.1.0 behind the async `ArtifactUploader` port, including typed error classification, per-job resume paths, progress propagation, and a deterministic `lunsaran-entregar-mock` transfer test.

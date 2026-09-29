@@ -5,10 +5,17 @@ use crate::{
     spool::Spool,
 };
 use sha2::{Digest, Sha256};
+use std::path::PathBuf;
+use std::pin::Pin;
 use std::{
     fs::File,
+    future::Future,
     io::{Read, Seek, SeekFrom},
 };
+use uuid::Uuid;
+
+pub type UploadFuture<'a> =
+    Pin<Box<dyn Future<Output = Result<UploadReceipt, UploadError>> + Send + 'a>>;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct UploadProgress {
@@ -34,15 +41,15 @@ impl UploadError {
     }
 }
 pub trait ArtifactUploader: Send + Sync {
-    fn upload(
-        &self,
+    fn upload<'a>(
+        &'a self,
         artifact: &crate::Artifact,
         job: &UploadJob,
-        progress: &mut dyn FnMut(UploadProgress),
-    ) -> Result<UploadReceipt, UploadError>;
+        progress: Box<dyn FnMut(UploadProgress) + Send + 'a>,
+    ) -> UploadFuture<'a>;
 }
 
-pub fn upload_with_uploader<U: ArtifactUploader>(
+pub async fn upload_with_uploader<U: ArtifactUploader>(
     spool: &Spool,
     uploader: &U,
     mut job: UploadJob,
@@ -54,10 +61,12 @@ pub fn upload_with_uploader<U: ArtifactUploader>(
         .map_err(|e| UploadError::Permanent(e.to_string()))?;
     job.attempts += 1;
     let mut transferred = job.offset;
-    let mut progress = |value: UploadProgress| {
+    let progress = |value: UploadProgress| {
         transferred = value.transferred;
     };
-    let receipt = uploader.upload(&job.artifact, &job, &mut progress)?;
+    let receipt = uploader
+        .upload(&job.artifact, &job, Box::new(progress))
+        .await?;
     job.server_url = Some(receipt.upload_id);
     job.offset = receipt.transferred.max(transferred);
     job.transition(ArtifactState::Completed)
@@ -67,6 +76,110 @@ pub fn upload_with_uploader<U: ArtifactUploader>(
         .update(job.clone())
         .map_err(|e| UploadError::Permanent(e.to_string()))?;
     Ok(job)
+}
+
+pub struct EntregarUploader {
+    client: lunsaran_entregar::Client,
+    project_id: Uuid,
+    resume_dir: PathBuf,
+}
+impl EntregarUploader {
+    pub fn new(
+        client: lunsaran_entregar::Client,
+        project_id: Uuid,
+        resume_dir: impl Into<PathBuf>,
+    ) -> Self {
+        Self {
+            client,
+            project_id,
+            resume_dir: resume_dir.into(),
+        }
+    }
+    fn entregar_state_path(&self, artifact: &crate::Artifact) -> PathBuf {
+        crate::resume::path_for(&self.resume_dir, &format!("{}.entregar", artifact.id.0))
+    }
+    fn identity_path(&self, artifact: &crate::Artifact) -> PathBuf {
+        crate::resume::path_for(&self.resume_dir, &artifact.id.0)
+    }
+    fn prepare_identity(&self, artifact: &crate::Artifact) -> Result<(), UploadError> {
+        let path = self.identity_path(artifact);
+        if path.exists() {
+            let state =
+                crate::resume::load(&path).map_err(|e| UploadError::Permanent(e.to_string()))?;
+            state
+                .validate_for(artifact, "lunsaran-entregar")
+                .map_err(|e| UploadError::Permanent(e.to_string()))?;
+        } else {
+            crate::resume::save(
+                &path,
+                &crate::resume::ResumeState::new(artifact, "lunsaran-entregar", 0),
+            )
+            .map_err(|e| UploadError::Permanent(e.to_string()))?;
+        }
+        Ok(())
+    }
+}
+impl ArtifactUploader for EntregarUploader {
+    fn upload<'a>(
+        &'a self,
+        artifact: &crate::Artifact,
+        job: &UploadJob,
+        mut progress: Box<dyn FnMut(UploadProgress) + Send + 'a>,
+    ) -> UploadFuture<'a> {
+        let artifact = artifact.clone();
+        let job = job.clone();
+        let state_path = self.entregar_state_path(&artifact);
+        let identity = self.prepare_identity(&artifact);
+        Box::pin(async move {
+            identity?;
+            let result = self
+                .client
+                .upload_file_with_progress(
+                    &artifact.path,
+                    lunsaran_entregar::UploadOptions {
+                        project_id: self.project_id,
+                        content_type: Some(artifact.media_type.clone()),
+                        idempotency_key: Some(job.artifact.id.0.clone()),
+                        resume_state: Some(state_path.clone()),
+                    },
+                    |value| {
+                        progress(UploadProgress {
+                            transferred: value.uploaded,
+                            total: value.total,
+                        })
+                    },
+                )
+                .await
+                .map_err(map_entregar_error)?;
+            let _ = tokio::fs::remove_file(&state_path).await;
+            let _ = tokio::fs::remove_file(self.identity_path(&artifact)).await;
+            Ok(UploadReceipt {
+                upload_id: result.asset_id.to_string(),
+                transferred: result.bytes_uploaded,
+            })
+        })
+    }
+}
+
+fn map_entregar_error(error: lunsaran_entregar::Error) -> UploadError {
+    use lunsaran_entregar::Error;
+    match error {
+        Error::Api { status, .. } if status.as_u16() == 401 || status.as_u16() == 403 => {
+            UploadError::Unauthorized("Lunsaran authorization failed".into())
+        }
+        Error::Api { status, .. }
+            if status.as_u16() == 408 || status.as_u16() == 429 || status.is_server_error() =>
+        {
+            UploadError::Retryable("transient Lunsaran API failure".into())
+        }
+        Error::Api { message, .. } => UploadError::Permanent(message),
+        Error::Request(_) | Error::Tus(_) => {
+            UploadError::Retryable("transient upload transport failure".into())
+        }
+        Error::Resume(message) => UploadError::Permanent(format!("resume state: {message}")),
+        Error::Configuration(message) | Error::Response(message) => UploadError::Permanent(message),
+        Error::File(message) => UploadError::Permanent(message.to_string()),
+    }
 }
 
 pub fn upload<C: LunsaranClient, T: TusClient>(
@@ -164,19 +277,22 @@ mod tests {
     }
     struct FakeUploader;
     impl ArtifactUploader for FakeUploader {
-        fn upload(
-            &self,
+        fn upload<'a>(
+            &'a self,
             artifact: &crate::Artifact,
             _: &UploadJob,
-            progress: &mut dyn FnMut(UploadProgress),
-        ) -> Result<UploadReceipt, UploadError> {
-            progress(UploadProgress {
-                transferred: artifact.size,
-                total: artifact.size,
-            });
-            Ok(UploadReceipt {
-                upload_id: "upload-1".into(),
-                transferred: artifact.size,
+            mut progress: Box<dyn FnMut(UploadProgress) + Send + 'a>,
+        ) -> UploadFuture<'a> {
+            let size = artifact.size;
+            Box::pin(async move {
+                progress(UploadProgress {
+                    transferred: size,
+                    total: size,
+                });
+                Ok(UploadReceipt {
+                    upload_id: "upload-1".into(),
+                    transferred: size,
+                })
             })
         }
     }
@@ -242,8 +358,8 @@ mod tests {
         std::fs::remove_dir_all(root).unwrap();
     }
 
-    #[test]
-    fn uploader_port_updates_durable_job() {
+    #[tokio::test]
+    async fn uploader_port_updates_durable_job() {
         let root = std::env::temp_dir().join(format!(
             "taytay-port-{}",
             SystemTime::now()
@@ -262,10 +378,47 @@ mod tests {
                 serde_json::json!({}),
             )
             .unwrap();
-        let completed = upload_with_uploader(&spool, &FakeUploader, job).unwrap();
+        let completed = upload_with_uploader(&spool, &FakeUploader, job)
+            .await
+            .unwrap();
         assert_eq!(completed.state, ArtifactState::Completed);
         assert_eq!(completed.server_url.as_deref(), Some("upload-1"));
         assert_eq!(spool.ledger().pending().len(), 0);
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[tokio::test]
+    async fn entregar_uploader_transfers_through_public_mock() {
+        let server = lunsaran_entregar_mock::MockServer::start().await.unwrap();
+        let root = std::env::temp_dir().join(format!(
+            "taytay-entregar-{}",
+            SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        let spool = Spool::open(&root, 1024).unwrap();
+        let job = spool
+            .publish(
+                ArtifactId::new("entregar-one"),
+                SourceId::new("test"),
+                "text/plain".into(),
+                b"mock-upload",
+                None,
+                serde_json::json!({}),
+            )
+            .unwrap();
+        let client = lunsaran_entregar::Client::new(lunsaran_entregar::ClientConfig::new(
+            server.base_url(),
+            "device-token",
+        ))
+        .unwrap();
+        let uploader = EntregarUploader::new(client, Uuid::nil(), root.join("resume"));
+        let completed = upload_with_uploader(&spool, &uploader, job).await.unwrap();
+        assert_eq!(completed.state, ArtifactState::Completed);
+        assert_eq!(completed.offset, 11);
+        assert_eq!(server.offset().await, 11);
+        server.shutdown();
         std::fs::remove_dir_all(root).unwrap();
     }
 }
