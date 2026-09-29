@@ -7,6 +7,8 @@
 - Connected parsed ONVIF events to the common motion-event model and reset V4L2
   segment timing after each emitted segment.
 - Added secret-free CLI controls for pausing and resuming durable upload jobs.
+- Classified expired published-client sessions as retryable upload outcomes and
+  added deterministic expiry coverage.
 
 - Adopt the published `lunsaran-entregar` and `lunsaran-entregar-mock` 0.1.1
   releases, including checksum propagation, protocol validation, retries,

@@ -220,7 +220,9 @@ fn map_entregar_error(error: lunsaran_entregar::Error) -> UploadError {
             UploadError::Retryable("transient upload transport failure".into())
         }
         Error::Resume(message) => UploadError::Permanent(format!("resume state: {message}")),
-        Error::Configuration(message) | Error::Response(message) => UploadError::Permanent(message),
+        Error::Configuration(message) => UploadError::Permanent(message),
+        Error::Response(message) if message.contains("expired") => UploadError::Expired(message),
+        Error::Response(message) => UploadError::Permanent(message),
         Error::File(message) => UploadError::Permanent(message.to_string()),
         Error::Cancelled => UploadError::Cancelled,
     }
@@ -544,6 +546,47 @@ mod tests {
             .await,
             12
         );
+    }
+
+    #[tokio::test]
+    async fn entregar_uploader_classifies_expired_sessions_for_retry() {
+        let server = lunsaran_entregar_mock::MockServer::start_with_behavior(
+            lunsaran_entregar_mock::MockBehavior {
+                expired_session: true,
+                ..Default::default()
+            },
+        )
+        .await
+        .unwrap();
+        let root = std::env::temp_dir().join(format!(
+            "taytay-entregar-expired-{}",
+            SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        let spool = Spool::open(&root, 1024).unwrap();
+        let job = spool
+            .publish(
+                ArtifactId::new("expired"),
+                SourceId::new("test"),
+                "text/plain".into(),
+                b"expired-upload",
+                None,
+                serde_json::json!({}),
+            )
+            .unwrap();
+        let client = lunsaran_entregar::Client::new(lunsaran_entregar::ClientConfig::new(
+            server.base_url(),
+            "device-token",
+        ))
+        .unwrap();
+        let uploader = EntregarUploader::new(client, Uuid::nil(), root.join("resume"));
+        let result = upload_with_uploader(&spool, &uploader, job).await;
+        assert!(matches!(result, Err(UploadError::Expired(_))));
+        assert_eq!(spool.ledger().pending().len(), 1);
+        server.shutdown();
+        std::fs::remove_dir_all(root).unwrap();
     }
 
     #[tokio::test]
