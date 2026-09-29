@@ -58,6 +58,7 @@ impl Segmenter {
         if self.bytes.len() >= self.policy.max_bytes
             || self.elapsed_seconds >= self.policy.max_duration_seconds
         {
+            self.elapsed_seconds = 0;
             Some(std::mem::take(&mut self.bytes))
         } else {
             None
@@ -134,6 +135,7 @@ mod tests {
         .unwrap();
         assert!(s.push(b"ab", 1).is_none());
         assert_eq!(s.push(b"c", 1), Some(b"abc".to_vec()));
+        assert!(s.push(b"d", 1).is_none());
     }
     #[test]
     fn negotiates_preferred_format() {

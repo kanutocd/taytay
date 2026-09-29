@@ -1,4 +1,4 @@
-use crate::{TaytayError, model::SourceId};
+use crate::{TaytayError, events::MotionEvent, model::SourceId};
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct OnvifDevice {
     pub endpoint: String,
@@ -11,6 +11,17 @@ pub struct OnvifEvent {
     pub topic: String,
     pub observed_at: String,
     pub source: SourceId,
+}
+impl OnvifEvent {
+    pub fn as_motion_event(&self) -> MotionEvent {
+        MotionEvent {
+            id: self.id.clone(),
+            source: self.source.clone(),
+            observed_at: self.observed_at.clone(),
+            kind: self.topic.clone(),
+            confidence: None,
+        }
+    }
 }
 pub fn parse_event(xml: &str, source: SourceId) -> Result<OnvifEvent, TaytayError> {
     let id = between(xml, "<MessageId>", "</MessageId>")
@@ -92,5 +103,6 @@ mod tests {
         )
         .unwrap();
         assert_eq!(event.topic, "Motion");
+        assert_eq!(event.as_motion_event().kind, "Motion");
     }
 }

@@ -37,6 +37,11 @@ impl FieldMetadata {
                 "field coordinates are out of range".into(),
             ));
         }
+        if self.point_count.is_some_and(|count| count == 0) {
+            return Err(TaytayError::Protocol(
+                "field point count must be positive".into(),
+            ));
+        }
         Ok(())
     }
 }
@@ -77,7 +82,7 @@ impl FieldFileAdapter {
                 id: ArtifactId::new(&checksum[..16]),
                 source: self.source.clone(),
                 path: p.to_string_lossy().into(),
-                media_type: "application/octet-stream".into(),
+                media_type: media_type_for(&p),
                 captured_at: None,
                 metadata: serde_json::json!({"field_source": self.source.0}),
                 size: e.metadata()?.len(),
@@ -101,12 +106,31 @@ impl FieldFileAdapter {
             let sidecar = Path::new(&artifact.path).with_extension("json");
             if sidecar.exists() {
                 let metadata = self.metadata_from_sidecar(sidecar)?;
+                artifact.captured_at = metadata.captured_at.clone();
                 artifact.metadata = serde_json::to_value(metadata)
                     .map_err(|e| TaytayError::Protocol(e.to_string()))?;
             }
         }
         Ok(artifacts)
     }
+}
+
+fn media_type_for(path: &Path) -> String {
+    match path
+        .extension()
+        .and_then(|value| value.to_str())
+        .unwrap_or_default()
+        .to_ascii_lowercase()
+        .as_str()
+    {
+        "jpg" | "jpeg" => "image/jpeg",
+        "png" => "image/png",
+        "mp4" | "mov" => "video/mp4",
+        "las" => "application/vnd.las",
+        "laz" => "application/vnd.laz",
+        _ => "application/octet-stream",
+    }
+    .into()
 }
 
 #[cfg(test)]
@@ -119,5 +143,37 @@ mod tests {
             ..Default::default()
         };
         assert!(m.validate().is_err());
+    }
+
+    #[test]
+    fn metadata_rejects_empty_point_clouds() {
+        let m = FieldMetadata {
+            point_count: Some(0),
+            ..Default::default()
+        };
+        assert!(m.validate().is_err());
+    }
+
+    #[test]
+    fn sidecar_metadata_is_attached_to_field_artifacts() {
+        let root = std::env::temp_dir().join(format!("taytay-field-{}", std::process::id()));
+        fs::create_dir_all(&root).unwrap();
+        let artifact_path = root.join("survey.laz");
+        fs::write(&artifact_path, b"point-cloud").unwrap();
+        fs::write(
+            root.join("survey.json"),
+            r#"{"flight_id":"flight-1","captured_at":"2027-01-01T00:00:00Z","point_count":42}"#,
+        )
+        .unwrap();
+
+        let adapter = FieldFileAdapter::new(SourceId::new("lidar"), &root, &["laz"]);
+        let artifacts = adapter.scan_with_sidecars().unwrap();
+        assert_eq!(artifacts[0].media_type, "application/vnd.laz");
+        assert_eq!(
+            artifacts[0].captured_at.as_deref(),
+            Some("2027-01-01T00:00:00Z")
+        );
+        assert_eq!(artifacts[0].metadata["point_count"], 42);
+        fs::remove_dir_all(root).unwrap();
     }
 }

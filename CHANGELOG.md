@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Improved file-based drone/LiDAR ingestion with media-type detection, sidecar
+  capture timestamps, point-count validation, and metadata fixture coverage.
+- Connected parsed ONVIF events to the common motion-event model and reset V4L2
+  segment timing after each emitted segment.
+
 - Adopt the published `lunsaran-entregar` and `lunsaran-entregar-mock` 0.1.1
   releases, including checksum propagation, protocol validation, retries,
   atomic resume state, and in-flight cancellation.
