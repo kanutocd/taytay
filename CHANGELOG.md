@@ -4,6 +4,8 @@
 
 ### Public integrator boundary
 
+- Made the Zensical SVG logo adapt to light and dark color schemes, matching
+  the theme-aware README branding.
 - Refocused the root README on crate consumers and added light/dark theme logo
   rendering using the Taytay PNG branding asset.
 - Reworked the root README into a compact crate-consumer entry point with CI,
