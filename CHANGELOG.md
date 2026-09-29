@@ -4,6 +4,8 @@
 
 ### Public integrator boundary
 
+- Moved repository-specific engineering instructions into the private
+  `taytay-saas` harness; the public repository no longer carries `AGENTS.md`.
 - Added public crate metadata and README linkage so `taytay` packages with
   discoverable release information.
 - Refined Taytay as a first-party Lunsaran integrator built on the public
