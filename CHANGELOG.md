@@ -11,6 +11,7 @@
 - Added documentation quality checks for Zensical builds, Markdown structure,
   fenced code blocks, trailing whitespace, and local-link drift; the checks
   now run as part of the complete quality harness and documentation CI.
+- Added GitHub Pages deployment for Zensical documentation builds from `main`.
 - Moved repository-specific engineering instructions into the private
   `taytay-saas` harness; the public repository no longer carries `AGENTS.md`.
 - Added public crate metadata and README linkage so `taytay` packages with
