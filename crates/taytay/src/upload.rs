@@ -24,7 +24,8 @@ pub struct UploadProgress {
 }
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct UploadReceipt {
-    pub upload_id: String,
+    pub asset_id: String,
+    pub session_id: Option<String>,
     pub transferred: u64,
 }
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -67,7 +68,7 @@ pub async fn upload_with_uploader<U: ArtifactUploader>(
     let receipt = uploader
         .upload(&job.artifact, &job, Box::new(progress))
         .await?;
-    job.server_url = Some(receipt.upload_id);
+    job.server_url = Some(receipt.asset_id);
     job.offset = receipt.transferred.max(transferred);
     job.transition(ArtifactState::Completed)
         .map_err(|e| UploadError::Permanent(e.to_string()))?;
@@ -87,11 +88,15 @@ pub async fn upload_with_uploader_cancelled<U: ArtifactUploader>(
     if cancellation.is_cancelled() {
         return Err(UploadError::Cancelled);
     }
-    let result = upload_with_uploader(spool, uploader, job).await;
-    if cancellation.is_cancelled() {
-        Err(UploadError::Cancelled)
-    } else {
-        result
+    tokio::select! {
+        result = upload_with_uploader(spool, uploader, job) => {
+            if cancellation.is_cancelled() {
+                Err(UploadError::Cancelled)
+            } else {
+                result
+            }
+        }
+        _ = cancellation.cancelled() => Err(UploadError::Cancelled),
     }
 }
 
@@ -186,7 +191,8 @@ impl ArtifactUploader for EntregarUploader {
             let _ = tokio::fs::remove_file(&state_path).await;
             let _ = tokio::fs::remove_file(self.identity_path(&artifact)).await;
             Ok(UploadReceipt {
-                upload_id: result.asset_id.to_string(),
+                asset_id: result.asset_id.to_string(),
+                session_id: Some(result.session_id.to_string()),
                 transferred: result.bytes_uploaded,
             })
         })
@@ -322,8 +328,28 @@ mod tests {
                     total: size,
                 });
                 Ok(UploadReceipt {
-                    upload_id: "upload-1".into(),
+                    asset_id: "asset-1".into(),
+                    session_id: Some("session-1".into()),
                     transferred: size,
+                })
+            })
+        }
+    }
+
+    struct SlowUploader;
+    impl ArtifactUploader for SlowUploader {
+        fn upload<'a>(
+            &'a self,
+            _: &crate::Artifact,
+            _: &UploadJob,
+            _: Box<dyn FnMut(UploadProgress) + Send + 'a>,
+        ) -> UploadFuture<'a> {
+            Box::pin(async {
+                tokio::time::sleep(std::time::Duration::from_millis(200)).await;
+                Ok(UploadReceipt {
+                    asset_id: "slow-asset".into(),
+                    session_id: Some("slow-session".into()),
+                    transferred: 7,
                 })
             })
         }
@@ -414,7 +440,7 @@ mod tests {
             .await
             .unwrap();
         assert_eq!(completed.state, ArtifactState::Completed);
-        assert_eq!(completed.server_url.as_deref(), Some("upload-1"));
+        assert_eq!(completed.server_url.as_deref(), Some("asset-1"));
         assert_eq!(spool.ledger().pending().len(), 0);
         std::fs::remove_dir_all(root).unwrap();
     }
@@ -538,6 +564,38 @@ mod tests {
             upload_with_uploader_cancelled(&spool, &FakeUploader, job, &token).await,
             Err(UploadError::Cancelled)
         );
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[tokio::test]
+    async fn cancelled_upload_drops_in_flight_uploader() {
+        let root = std::env::temp_dir().join(format!(
+            "taytay-cancel-in-flight-{}",
+            SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        let spool = Spool::open(&root, 1024).unwrap();
+        let job = spool
+            .publish(
+                ArtifactId::new("cancel-in-flight"),
+                SourceId::new("test"),
+                "x".into(),
+                b"payload",
+                None,
+                serde_json::json!({}),
+            )
+            .unwrap();
+        let token = crate::scheduler::CancellationToken::default();
+        let trigger = token.clone();
+        tokio::spawn(async move {
+            tokio::time::sleep(std::time::Duration::from_millis(20)).await;
+            trigger.cancel();
+        });
+        let result = upload_with_uploader_cancelled(&spool, &SlowUploader, job, &token).await;
+        assert_eq!(result, Err(UploadError::Cancelled));
+        assert_eq!(spool.ledger().pending().len(), 1);
         std::fs::remove_dir_all(root).unwrap();
     }
 }

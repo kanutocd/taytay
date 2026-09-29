@@ -4,6 +4,8 @@
 
 ### Public integrator boundary
 
+- Added true in-flight cancellation at the Taytay uploader boundary and
+  explicit asset/session identity fields on `UploadReceipt`.
 - Made the Apache-2.0 license copyright holder explicit as Kenneth C. Demanawa.
 - Documented the Hiligaynon origin of “Taytay” as “bridge” in the README and
   Zensical overview.

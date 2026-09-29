@@ -19,6 +19,12 @@ impl CancellationToken {
     pub fn is_cancelled(&self) -> bool {
         self.0.load(Ordering::Acquire)
     }
+
+    pub async fn cancelled(&self) {
+        while !self.is_cancelled() {
+            tokio::time::sleep(std::time::Duration::from_millis(10)).await;
+        }
+    }
 }
 
 pub struct JobQueue {
