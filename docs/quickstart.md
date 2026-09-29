@@ -61,6 +61,9 @@ cargo run -- --status /tmp/taytay.toml
 reports JSON readiness and spool counts without exposing credentials or media
 metadata.
 
+The reference binary also supports `--pause ARTIFACT_ID CONFIG` and
+`--resume ARTIFACT_ID CONFIG` for durable upload control.
+
 ## Choose an integration path
 
 | You are building… | Start with… |

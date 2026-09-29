@@ -41,6 +41,17 @@ systemctl status taytay
 spool usage. It does not print tokens, URLs containing credentials, filenames,
 or media metadata.
 
+Pause or resume a durable artifact by ID when an operator needs to stop retry
+activity without deleting the local artifact:
+
+```bash
+taytay --pause ARTIFACT_ID /etc/taytay/taytay.toml
+taytay --resume ARTIFACT_ID /etc/taytay/taytay.toml
+```
+
+These commands update the ledger atomically. A paused artifact is excluded
+from pending scheduling and returns to `Published` when resumed.
+
 ## Metrics and alerts
 
 The library exposes Prometheus-compatible counters for uploads, retries,
