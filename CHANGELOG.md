@@ -4,6 +4,8 @@
 
 ### Public integrator boundary
 
+- Refocused the root README on crate consumers and added light/dark theme logo
+  rendering using the Taytay PNG branding asset.
 - Reworked the root README into a compact crate-consumer entry point with CI,
   documentation, Rust, and license badges, and added root license,
   contribution, and security policy pages.
