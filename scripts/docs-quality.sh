@@ -19,10 +19,12 @@ import re
 import sys
 
 root = Path("docs")
+paths = [Path("README.md"), Path("CONTRIBUTING.md"), Path("SECURITY.md")]
+paths.extend(sorted(root.rglob("*.md")))
 errors = []
 link_pattern = re.compile(r"!?\[[^]]*\]\(([^)]+)\)")
 
-for path in sorted(root.rglob("*.md")):
+for path in paths:
     text = path.read_text(encoding="utf-8")
     lines = text.splitlines()
 
@@ -73,5 +75,5 @@ if errors:
     print("\n".join(f"- {error}" for error in errors), file=sys.stderr)
     sys.exit(1)
 
-print(f"Documentation lint passed for {len(list(root.rglob('*.md')))} Markdown files")
+print(f"Documentation lint passed for {len(paths)} Markdown files")
 PY

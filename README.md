@@ -1,46 +1,81 @@
 # Taytay
 
-Taytay is a Rust Linux edge bridge for Lunsaran. It receives artifacts from local or networked sources, stores them durably while offline, and uploads them to Lunsaran through Brutus using TUS.
+[![CI](https://github.com/kanutocd/taytay/actions/workflows/ci.yml/badge.svg)](https://github.com/kanutocd/taytay/actions/workflows/ci.yml)
+[![Documentation](https://github.com/kanutocd/taytay/actions/workflows/docs.yml/badge.svg)](https://github.com/kanutocd/taytay/actions/workflows/docs.yml)
+[![Docs](https://img.shields.io/badge/docs-GitHub%20Pages-2563eb)](https://kanutocd.github.io/taytay/)
+[![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
+[![Rust](https://img.shields.io/badge/rust-1.85%2B-orange.svg?logo=rust)](https://www.rust-lang.org/)
 
-Consumer documentation is published with Zensical at
-<https://kanutocd.github.io/taytay>. Start with the [quick start](docs/quickstart.md)
-or the [Rust crate guide](docs/crate-guide.md) if you are embedding Taytay in
-an OEM device, edge worker, or source integration.
+Taytay is a Rust Linux edge bridge for durable, resumable Lunsaran uploads. It
+turns completed output from cameras, NVRs, files, and field sources into
+checksummed local jobs, then transfers them through Lunsaran and Brutus/TUS.
 
-The first source adapter targets existing CCTV/NVR installations. The core remains source-independent so later adapters can support drones, LiDAR systems, USB cameras, filesystems, and other field devices.
+Taytay is for OEMs, Rust integrators, and teams building Linux edge workers. It
+is a reusable crate and reference service boundary—not a hosted camera
+platform. Lunsaran owns identity and organization/project authorization;
+Brutus owns TUS byte transfer and provider execution.
 
-## Project status
+## Use Taytay
 
-The durable local/upload foundation and the published `lunsaran-entregar`
-integration are implemented, including operator diagnostics, secure resume
-state, bounded source segmenting, event deduplication, health counters, and
-deterministic mock acceptance. Source-specific hardware capture, live service
-acceptance, and field compatibility still require external devices or
-environments.
+Add the crate to an integrator:
 
-The service validates TOML configuration, publishes artifacts atomically into a quota-bounded spool, persists resumable jobs, verifies SHA-256 checksums, and exposes source/control-plane/TUS seams for local fixtures. See [operations](docs/OPERATIONS.md), [security](docs/SECURITY.md), and [compatibility](docs/COMPATIBILITY.md).
+```toml
+[dependencies]
+taytay = "0.0.1"
+```
 
-Private architecture, implementation planning, API-contract, quality, and `lunsaran-entregar` integration harness documents are maintained in the companion `taytay-saas/docs/taytay-linux-edge-bridge` repository. They are not required to build or consume the public crate.
+Start with the [consumer documentation](https://kanutocd.github.io/taytay/),
+especially the [quick start](https://kanutocd.github.io/taytay/quickstart/),
+[Rust crate guide](https://kanutocd.github.io/taytay/crate-guide/), and
+[architecture guide](https://kanutocd.github.io/taytay/architecture/).
 
-## Name
+The crate provides:
 
-*Taytay* is a Hiligaynon word for bridge. The name describes the edge-to-platform role rather than a specific source device.
+- typed source, artifact, spool, job, uploader, and error contracts;
+- atomic publication, SHA-256 verification, quota enforcement, and restart
+  recovery;
+- bounded scheduling, retry classification, cancellation, and durable resume
+  state; and
+- a `lunsaran-entregar` integration behind the `ArtifactUploader` boundary.
 
-## Integrator strategy
+## Reference service
 
-Taytay is a first-party reference integrator of Lunsaran, using the public
-`lunsaran-entregar` Rust client library. The same boundary is intended for
-third-party integrators and OEMs. A deployment still requires a Lunsaran
-account, organization/project authorization, and a scoped device/workload
-credential; public source distribution does not bypass Lunsaran identity.
+The binary validates TOML configuration and reports local readiness:
 
-The reusable core is planned for an Apache-2.0 public release after its
-credential, spool, and uploader contracts stabilize. Hosted fleet management,
-billing, proprietary adapters, and advanced orchestration may remain in a
-private SaaS product built on the public core.
+```bash
+cargo run -- --check-config config/taytay.toml.example
+cargo run -- --status config/taytay.toml.example
+```
 
-The future SaaS product will live in a separate private repository. This
-repository remains focused on the public edge workspace, its reference service
-and CLI, source adapters, and stable integration contracts. The SaaS product
-will consume published Taytay crates instead of coupling its release cycle to
-this workspace.
+For deployment guidance, see [operations](docs/operations.md) and the example
+configuration at [`config/taytay.toml.example`](config/taytay.toml.example).
+
+## Scope
+
+Taytay keeps source adapters behind small typed traits, so an integrator can
+add filesystem/NVR, V4L2, RTSP, ONVIF, drone, or LiDAR sources without coupling
+the queue to a vendor SDK. Real device compatibility and hosted Lunsaran
+acceptance require external hardware or services.
+
+Taytay never receives or persists customer storage-provider credentials. Source
+credentials remain on the edge and must not appear in logs, metadata, metrics,
+or diagnostics.
+
+## Development
+
+```bash
+cargo test --workspace --all-features
+cargo clippy --workspace --all-targets --all-features -- -D warnings
+scripts/quality.sh
+scripts/docs-quality.sh
+```
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the workflow and
+[CHANGELOG.md](CHANGELOG.md) for release notes.
+
+## Project policies
+
+- [Apache-2.0 license](LICENSE)
+- [Contributing](CONTRIBUTING.md)
+- [Security policy](SECURITY.md)
+- [Documentation site](https://kanutocd.github.io/taytay/)

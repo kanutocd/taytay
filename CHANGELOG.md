@@ -4,6 +4,9 @@
 
 ### Public integrator boundary
 
+- Reworked the root README into a compact crate-consumer entry point with CI,
+  documentation, Rust, and license badges, and added root license,
+  contribution, and security policy pages.
 - Added a scalable SVG Taytay logo derived from the existing PNG branding asset
   and configured it as the Zensical site logo.
 - Added a Zensical documentation site focused on crate consumers, including
