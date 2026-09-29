@@ -6,6 +6,10 @@
   releases, including checksum propagation, protocol validation, retries,
   atomic resume state, and in-flight cancellation.
 - Update upload and durability documentation for the 0.1.1 client boundary.
+- Added durable `Spool::pause` and `Spool::resume` controls; paused jobs are
+  persisted and excluded from pending scheduling until resumed.
+- Added acceptance coverage proving the artifact checksum is sent to the
+  published Lunsaran upload-session boundary.
 
 ### Public integrator boundary
 

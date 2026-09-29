@@ -96,6 +96,14 @@ impl Spool {
     pub fn ledger(&self) -> &Ledger {
         &self.ledger
     }
+
+    pub fn pause(&self, id: &ArtifactId) -> Result<UploadJob, TaytayError> {
+        self.ledger.pause(id)
+    }
+
+    pub fn resume(&self, id: &ArtifactId) -> Result<UploadJob, TaytayError> {
+        self.ledger.resume(id)
+    }
     pub fn cleanup_completed(&self) -> Result<usize, TaytayError> {
         let jobs = self.ledger.completed();
         let mut removed = 0;

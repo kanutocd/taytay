@@ -47,6 +47,7 @@ pub struct Artifact {
 pub enum ArtifactState {
     Published,
     Uploading,
+    Paused,
     Completed,
     Failed,
     Retained,
@@ -84,9 +85,14 @@ impl UploadJob {
                 ArtifactState::Uploading,
                 ArtifactState::Uploading | ArtifactState::Completed | ArtifactState::Failed
             ) | (
-                ArtifactState::Failed,
-                ArtifactState::Uploading | ArtifactState::Retained
-            ) | (ArtifactState::Completed, ArtifactState::Retained)
+                ArtifactState::Published | ArtifactState::Failed,
+                ArtifactState::Paused
+            ) | (ArtifactState::Paused, ArtifactState::Published)
+                | (
+                    ArtifactState::Failed,
+                    ArtifactState::Uploading | ArtifactState::Retained
+                )
+                | (ArtifactState::Completed, ArtifactState::Retained)
                 | (ArtifactState::Retained, ArtifactState::Retained)
         );
         if valid {

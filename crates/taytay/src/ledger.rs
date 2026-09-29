@@ -69,11 +69,41 @@ impl Ledger {
             .filter(|j| {
                 !matches!(
                     j.state,
-                    crate::model::ArtifactState::Completed | crate::model::ArtifactState::Retained
+                    crate::model::ArtifactState::Completed
+                        | crate::model::ArtifactState::Retained
+                        | crate::model::ArtifactState::Paused
                 )
             })
             .cloned()
             .collect()
+    }
+
+    pub fn paused(&self) -> Vec<UploadJob> {
+        self.jobs
+            .lock()
+            .expect("ledger mutex poisoned")
+            .values()
+            .filter(|j| matches!(j.state, crate::model::ArtifactState::Paused))
+            .cloned()
+            .collect()
+    }
+
+    pub fn pause(&self, id: &ArtifactId) -> Result<UploadJob, TaytayError> {
+        let mut job = self
+            .get(id)
+            .ok_or_else(|| TaytayError::ArtifactNotReady(id.to_string()))?;
+        job.transition(crate::model::ArtifactState::Paused)?;
+        self.update(job.clone())?;
+        Ok(job)
+    }
+
+    pub fn resume(&self, id: &ArtifactId) -> Result<UploadJob, TaytayError> {
+        let mut job = self
+            .get(id)
+            .ok_or_else(|| TaytayError::ArtifactNotReady(id.to_string()))?;
+        job.transition(crate::model::ArtifactState::Published)?;
+        self.update(job.clone())?;
+        Ok(job)
     }
     pub fn completed(&self) -> Vec<UploadJob> {
         self.jobs
@@ -100,5 +130,42 @@ impl Ledger {
         fs::rename(tmp, &self.path)?;
         let _ = OpenOptions::new().read(true).open(&self.path)?.sync_all();
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::{ArtifactId, SourceId, spool::Spool};
+
+    #[test]
+    fn pause_and_resume_are_durable_and_excluded_from_pending() {
+        let root = std::env::temp_dir().join(format!("taytay-ledger-{}", std::process::id()));
+        let spool = Spool::open(&root, 100).unwrap();
+        let job = spool
+            .publish(
+                ArtifactId::new("pause-me"),
+                SourceId::new("camera"),
+                "application/octet-stream".into(),
+                b"data",
+                None,
+                serde_json::json!({}),
+            )
+            .unwrap();
+
+        let paused = spool.pause(&job.artifact.id).unwrap();
+        assert_eq!(paused.state, crate::ArtifactState::Paused);
+        assert!(spool.ledger().pending().is_empty());
+        assert_eq!(spool.ledger().paused().len(), 1);
+
+        let resumed = spool.resume(&job.artifact.id).unwrap();
+        assert_eq!(resumed.state, crate::ArtifactState::Published);
+        assert_eq!(spool.ledger().pending().len(), 1);
+
+        let reopened = Spool::open(&root, 100).unwrap();
+        assert_eq!(
+            reopened.ledger().get(&job.artifact.id).unwrap().state,
+            crate::ArtifactState::Published
+        );
+        std::fs::remove_dir_all(root).unwrap();
     }
 }

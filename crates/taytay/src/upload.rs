@@ -35,6 +35,7 @@ pub enum UploadError {
     Expired(String),
     Permanent(String),
     Cancelled,
+    Paused,
 }
 impl UploadError {
     pub fn retryable(&self) -> bool {
@@ -55,6 +56,9 @@ pub async fn upload_with_uploader<U: ArtifactUploader>(
     uploader: &U,
     mut job: UploadJob,
 ) -> Result<UploadJob, UploadError> {
+    if matches!(job.state, ArtifactState::Paused) {
+        return Err(UploadError::Paused);
+    }
     spool
         .verify(&job)
         .map_err(|e| UploadError::Permanent(e.to_string()))?;
@@ -474,10 +478,12 @@ mod tests {
         ))
         .unwrap();
         let uploader = EntregarUploader::new(client, Uuid::nil(), root.join("resume"));
+        let expected_checksum = job.artifact.checksum_sha256.clone();
         let completed = upload_with_uploader(&spool, &uploader, job).await.unwrap();
         assert_eq!(completed.state, ArtifactState::Completed);
         assert_eq!(completed.offset, 11);
         assert_eq!(server.offset().await, 11);
+        assert_eq!(server.checksum().await, expected_checksum);
         server.shutdown();
         std::fs::remove_dir_all(root).unwrap();
     }

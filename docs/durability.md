@@ -50,9 +50,10 @@ policy.
 
 Cancellation stops new work at the scheduler boundary and can cancel an
 in-flight upload through the `lunsaran-entregar` 0.1.1 cancellation token.
-Pause/resume remains a separate product-level operation: cancellation leaves
-the durable job available for a later retry, while pause policy and controls
-must be defined by the application scheduler.
+The library also exposes `Spool::pause` and `Spool::resume`: paused jobs are
+persisted in the ledger, excluded from pending work, and returned to
+`Published` when resumed. Cancellation is appropriate for stopping an
+in-flight upload; the application can then pause or retry the durable job.
 
 ## What to test in your integration
 
