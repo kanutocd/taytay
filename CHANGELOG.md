@@ -4,6 +4,8 @@
 
 ### Public integrator boundary
 
+- Added a scalable SVG Taytay logo derived from the existing PNG branding asset
+  and configured it as the Zensical site logo.
 - Added a Zensical documentation site focused on crate consumers, including
   quick start, architecture, durability, uploader, source-adapter, operations,
   security, and development guides with Mermaid diagrams, plus a CI build
