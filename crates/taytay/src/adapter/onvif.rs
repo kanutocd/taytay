@@ -5,6 +5,27 @@ pub struct OnvifDevice {
     pub name: Option<String>,
     pub profile_tokens: Vec<String>,
 }
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct OnvifEvent {
+    pub id: String,
+    pub topic: String,
+    pub observed_at: String,
+    pub source: SourceId,
+}
+pub fn parse_event(xml: &str, source: SourceId) -> Result<OnvifEvent, TaytayError> {
+    let id = between(xml, "<MessageId>", "</MessageId>")
+        .ok_or_else(|| TaytayError::Protocol("ONVIF event has no message ID".into()))?;
+    let topic = between(xml, "<Topic>", "</Topic>")
+        .ok_or_else(|| TaytayError::Protocol("ONVIF event has no topic".into()))?;
+    let observed_at = between(xml, "<UtcTime>", "</UtcTime>")
+        .ok_or_else(|| TaytayError::Protocol("ONVIF event has no timestamp".into()))?;
+    Ok(OnvifEvent {
+        id: id.into(),
+        topic: topic.into(),
+        observed_at: observed_at.into(),
+        source,
+    })
+}
 impl OnvifDevice {
     pub fn select_profile(&self, preferred: &[&str]) -> Option<&str> {
         preferred
@@ -65,5 +86,11 @@ mod tests {
         assert_eq!(d.endpoint, "http://camera/onvif");
         assert_eq!(d.profile_tokens, vec!["t1"]);
         assert_eq!(d.select_profile(&["missing", "t1"]), Some("t1"));
+        let event = parse_event(
+            "<MessageId>m1</MessageId><Topic>Motion</Topic><UtcTime>2027</UtcTime>",
+            SourceId::new("front"),
+        )
+        .unwrap();
+        assert_eq!(event.topic, "Motion");
     }
 }

@@ -39,3 +39,4 @@
 - Implemented the secret-free CLI diagnostics described by the implementation boundary.
 - Pinned and integrated `lunsaran-entregar` 0.1.0 behind the async `ArtifactUploader` port, including typed error classification, per-job resume paths, progress propagation, and a deterministic `lunsaran-entregar-mock` transfer test.
 - Added public-client conformance tests for transient PATCH failures, stale offsets, and pre-flight cancellation.
+- Added deterministic event-to-capture windows, ONVIF event parsing, V4L2 format negotiation, RTSP timestamp/codec validation, and field sidecar metadata association.

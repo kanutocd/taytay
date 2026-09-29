@@ -6,6 +6,27 @@ pub enum StreamState {
     Streaming,
     Reconnecting,
 }
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct StreamMetadata {
+    pub codec: String,
+    pub time_base_nanos: u64,
+    pub last_timestamp_nanos: Option<u64>,
+}
+impl StreamMetadata {
+    pub fn observe(&mut self, timestamp_nanos: u64) -> Result<(), TaytayError> {
+        if self.time_base_nanos == 0
+            || self
+                .last_timestamp_nanos
+                .is_some_and(|last| timestamp_nanos < last)
+        {
+            return Err(TaytayError::Protocol(
+                "RTSP timestamp is invalid or regressed".into(),
+            ));
+        }
+        self.last_timestamp_nanos = Some(timestamp_nanos);
+        Ok(())
+    }
+}
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct SegmentPolicy {
     pub max_bytes: usize,
@@ -106,5 +127,12 @@ mod tests {
         .unwrap();
         assert!(s.push(b"ab", 1).is_none());
         assert_eq!(s.push(b"c", 1), Some(b"abc".to_vec()));
+        let mut metadata = StreamMetadata {
+            codec: "h264".into(),
+            time_base_nanos: 1,
+            last_timestamp_nanos: None,
+        };
+        metadata.observe(2).unwrap();
+        assert!(metadata.observe(1).is_err());
     }
 }

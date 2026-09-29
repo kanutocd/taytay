@@ -8,6 +8,27 @@ pub struct V4l2Format {
     pub height: u32,
     pub fps: u32,
 }
+pub fn negotiate_format(
+    supported: &[V4l2Format],
+    preferred_pixels: &[&str],
+    min_width: u32,
+    min_height: u32,
+) -> Result<V4l2Format, TaytayError> {
+    preferred_pixels
+        .iter()
+        .find_map(|pixel| {
+            supported
+                .iter()
+                .filter(|format| {
+                    format.pixel_format == *pixel
+                        && format.width >= min_width
+                        && format.height >= min_height
+                })
+                .max_by_key(|format| (format.width.saturating_mul(format.height), format.fps))
+                .cloned()
+        })
+        .ok_or_else(|| TaytayError::Configuration("no compatible V4L2 format".into()))
+}
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct SegmentPolicy {
     pub max_bytes: usize,
@@ -113,5 +134,30 @@ mod tests {
         .unwrap();
         assert!(s.push(b"ab", 1).is_none());
         assert_eq!(s.push(b"c", 1), Some(b"abc".to_vec()));
+    }
+    #[test]
+    fn negotiates_preferred_format() {
+        let supported = vec![
+            V4l2Format {
+                device: "/dev/video0".into(),
+                pixel_format: "YUYV".into(),
+                width: 1280,
+                height: 720,
+                fps: 30,
+            },
+            V4l2Format {
+                device: "/dev/video0".into(),
+                pixel_format: "MJPG".into(),
+                width: 1920,
+                height: 1080,
+                fps: 30,
+            },
+        ];
+        assert_eq!(
+            negotiate_format(&supported, &["MJPG", "YUYV"], 1280, 720)
+                .unwrap()
+                .pixel_format,
+            "MJPG"
+        );
     }
 }

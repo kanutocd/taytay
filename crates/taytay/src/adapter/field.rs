@@ -95,6 +95,18 @@ impl FieldFileAdapter {
         metadata.validate()?;
         Ok(metadata)
     }
+    pub fn scan_with_sidecars(&self) -> Result<Vec<Artifact>, TaytayError> {
+        let mut artifacts = self.scan()?;
+        for artifact in &mut artifacts {
+            let sidecar = Path::new(&artifact.path).with_extension("json");
+            if sidecar.exists() {
+                let metadata = self.metadata_from_sidecar(sidecar)?;
+                artifact.metadata = serde_json::to_value(metadata)
+                    .map_err(|e| TaytayError::Protocol(e.to_string()))?;
+            }
+        }
+        Ok(artifacts)
+    }
 }
 
 #[cfg(test)]
