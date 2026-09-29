@@ -75,6 +75,7 @@ Run the deterministic published-client acceptance tests locally:
 scripts/acceptance-mock.sh
 ```
 
-This covers the happy path, transient PATCH failure, stale-offset recovery,
-and pre-flight cancellation against a local mock. It does not replace a hosted
+This covers the happy path, checksum propagation, transient PATCH failure,
+stale-offset recovery, expired-session classification, and pre-flight
+cancellation against a local mock. It does not replace a hosted
 Lunsaran/Brutus acceptance environment or hardware testing.

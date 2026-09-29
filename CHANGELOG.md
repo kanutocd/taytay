@@ -9,6 +9,8 @@
 - Added secret-free CLI controls for pausing and resuming durable upload jobs.
 - Classified expired published-client sessions as retryable upload outcomes and
   added deterministic expiry coverage.
+- Made ONVIF fixture parsing namespace-prefix tolerant and expanded the local
+  acceptance command description to include expiry and checksum coverage.
 
 - Adopt the published `lunsaran-entregar` and `lunsaran-entregar-mock` 0.1.1
   releases, including checksum propagation, protocol validation, retries,

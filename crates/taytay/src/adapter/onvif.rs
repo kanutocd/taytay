@@ -24,11 +24,11 @@ impl OnvifEvent {
     }
 }
 pub fn parse_event(xml: &str, source: SourceId) -> Result<OnvifEvent, TaytayError> {
-    let id = between(xml, "<MessageId>", "</MessageId>")
+    let id = local_element(xml, "MessageId")
         .ok_or_else(|| TaytayError::Protocol("ONVIF event has no message ID".into()))?;
-    let topic = between(xml, "<Topic>", "</Topic>")
+    let topic = local_element(xml, "Topic")
         .ok_or_else(|| TaytayError::Protocol("ONVIF event has no topic".into()))?;
-    let observed_at = between(xml, "<UtcTime>", "</UtcTime>")
+    let observed_at = local_element(xml, "UtcTime")
         .ok_or_else(|| TaytayError::Protocol("ONVIF event has no timestamp".into()))?;
     Ok(OnvifEvent {
         id: id.into(),
@@ -51,9 +51,9 @@ impl OnvifDevice {
     }
 }
 pub fn parse_probe(xml: &str) -> Result<OnvifDevice, TaytayError> {
-    let endpoint = between(xml, "<XAddrs>", "</XAddrs>")
+    let endpoint = local_element(xml, "XAddrs")
         .ok_or_else(|| TaytayError::Protocol("ONVIF probe has no XAddrs".into()))?;
-    let name = between(xml, "<Name>", "</Name>");
+    let name = local_element(xml, "Name");
     let profile_tokens = xml
         .split("token=\"")
         .skip(1)
@@ -66,12 +66,23 @@ pub fn parse_probe(xml: &str) -> Result<OnvifDevice, TaytayError> {
         profile_tokens,
     })
 }
-fn between<'a>(value: &'a str, start: &str, end: &str) -> Option<&'a str> {
-    value
-        .split_once(start)?
-        .1
-        .split_once(end)
-        .map(|x| x.0.trim())
+fn local_element<'a>(xml: &'a str, local_name: &str) -> Option<&'a str> {
+    let start = xml.match_indices('<').find_map(|(index, _)| {
+        let remainder = &xml[index + 1..];
+        let name = remainder
+            .split(|character: char| character == '>' || character.is_whitespace())
+            .next()?;
+        (name.rsplit(':').next()? == local_name).then_some(index)
+    })?;
+    let opening_end = xml[start..].find('>')? + start;
+    let closing_start = xml[opening_end + 1..]
+        .match_indices("</")
+        .find_map(|(offset, _)| {
+            let remainder = &xml[opening_end + 1 + offset + 2..];
+            let name = remainder.split('>').next()?.trim();
+            (name.rsplit(':').next()? == local_name).then_some(opening_end + 1 + offset)
+        })?;
+    Some(xml[opening_end + 1..closing_start].trim())
 }
 pub struct OnvifAdapter {
     source: SourceId,
@@ -98,7 +109,7 @@ mod tests {
         assert_eq!(d.profile_tokens, vec!["t1"]);
         assert_eq!(d.select_profile(&["missing", "t1"]), Some("t1"));
         let event = parse_event(
-            "<MessageId>m1</MessageId><Topic>Motion</Topic><UtcTime>2027</UtcTime>",
+            "<tt:MessageId>m1</tt:MessageId><tt:Topic>Motion</tt:Topic><tt:UtcTime>2027</tt:UtcTime>",
             SourceId::new("front"),
         )
         .unwrap();
