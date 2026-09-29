@@ -6,6 +6,7 @@ if [[ ! -f Cargo.toml ]]; then
   exit 0
 fi
 
+scripts/docs-quality.sh
 cargo fmt --all -- --check
 cargo check --workspace --all-targets --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings

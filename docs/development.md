@@ -59,8 +59,11 @@ python -m pip install zensical
 Build the site from the repository root:
 
 ```bash
-zensical build
+scripts/docs-quality.sh
 ```
+
+This builds the Zensical site and lints Markdown structure, fenced code blocks,
+trailing whitespace, and local links in one command.
 
 Keep examples aligned with the current public API. Private planning documents
 belong in the companion `taytay-saas` repository and should not be added to
