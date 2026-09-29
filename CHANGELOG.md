@@ -5,6 +5,8 @@
 - Added consumer-focused rustdoc across the public Taytay crate API, including
   lifecycle invariants, security boundaries, adapter contracts, protocol
   semantics, persistence guarantees, and upload integration guidance.
+- Added a manually triggered GitHub Actions release workflow for verified,
+  idempotent publication of the `taytay` crate to crates.io.
 - Improved file-based drone/LiDAR ingestion with media-type detection, sidecar
   capture timestamps, point-count validation, and metadata fixture coverage.
 - Connected parsed ONVIF events to the common motion-event model and reset V4L2

@@ -1,0 +1,55 @@
+name: Taytay release
+
+on:
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: Publish the taytay crate to crates.io
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - run: cargo fmt --all -- --check
+      - run: cargo check --workspace --all-targets --all-features
+      - run: cargo clippy --workspace --all-targets --all-features -- -D warnings
+      - run: cargo test --workspace --all-features
+      - run: cargo package -p taytay --locked
+      - run: cargo publish -p taytay --dry-run --locked
+
+  publish:
+    if: ${{ inputs.publish }}
+    needs: verify
+    runs-on: ubuntu-24.04
+    env:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Verify crates.io token is configured
+        shell: bash
+        run: test -n "$CARGO_REGISTRY_TOKEN"
+      - name: Publish taytay if missing
+        shell: bash
+        run: |
+          set -euo pipefail
+          package="taytay"
+          version="$(cargo metadata --no-deps --format-version 1 | jq -r --arg package "$package" '.packages[] | select(.name == $package) | .version')"
+          status="$(curl --silent --show-error --output /dev/null --write-out '%{http_code}' \
+            --header 'User-Agent: taytay-release (https://github.com/kanutocd/taytay)' \
+            "https://crates.io/api/v1/crates/${package}/${version}")"
+          case "$status" in
+            200) echo "${package}@${version} already exists; skipping publish" ;;
+            404) cargo publish -p "$package" --locked ;;
+            *) echo "Unable to determine ${package}@${version} availability (HTTP ${status})" >&2; exit 1 ;;
+          esac
