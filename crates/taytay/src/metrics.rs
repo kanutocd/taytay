@@ -1,5 +1,8 @@
+//! Secret-free Prometheus-compatible metrics rendering.
+
 use crate::operations::CounterSnapshot;
 
+/// Renders counters using stable, secret-free Prometheus metric names.
 pub fn prometheus(snapshot: CounterSnapshot) -> String {
     format!(
         "# TYPE taytay_uploads_total counter\ntaytay_uploads_total {}\n# TYPE taytay_retries_total counter\ntaytay_retries_total {}\n# TYPE taytay_bytes_transferred_total counter\ntaytay_bytes_transferred_total {}\n# TYPE taytay_source_errors_total counter\ntaytay_source_errors_total {}\n",

@@ -1,3 +1,11 @@
+//! Upload ports, lifecycle helpers, and the published `lunsaran-entregar`
+//! integration.
+//!
+//! [`ArtifactUploader`](crate::upload::ArtifactUploader) is the main extension
+//! point for applications. The default
+//! [`EntregarUploader`](crate::upload::EntregarUploader) keeps source and scheduler code independent of
+//! HTTP and TUS implementation details.
+
 use crate::{
     TaytayError,
     model::{ArtifactState, UploadJob},
@@ -14,35 +22,53 @@ use std::{
 };
 use uuid::Uuid;
 
+/// Boxed upload future used by [`ArtifactUploader`].
 pub type UploadFuture<'a> =
     Pin<Box<dyn Future<Output = Result<UploadReceipt, UploadError>> + Send + 'a>>;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
+/// Progress snapshot emitted while an artifact is transferred.
 pub struct UploadProgress {
+    /// Bytes confirmed as transferred.
     pub transferred: u64,
+    /// Total bytes expected for the artifact.
     pub total: u64,
 }
 #[derive(Clone, Debug, Eq, PartialEq)]
+/// Stable result of a successful upload.
 pub struct UploadReceipt {
+    /// Lunsaran asset identity.
     pub asset_id: String,
+    /// Lunsaran upload-session identity, when available.
     pub session_id: Option<String>,
+    /// Bytes confirmed by the uploader.
     pub transferred: u64,
 }
 #[derive(Clone, Debug, Eq, PartialEq)]
+/// Classified upload failure suitable for scheduler policy.
 pub enum UploadError {
+    /// Temporary transport or service failure.
     Retryable(String),
+    /// Credential or authorization failure.
     Unauthorized(String),
+    /// Session expired and should be recreated.
     Expired(String),
+    /// Non-retryable local or protocol failure.
     Permanent(String),
+    /// Cooperative cancellation was requested.
     Cancelled,
+    /// Operator paused the durable job.
     Paused,
 }
 impl UploadError {
+    /// Returns whether the scheduler may retry this failure.
     pub fn retryable(&self) -> bool {
         matches!(self, Self::Retryable(_) | Self::Expired(_))
     }
 }
+/// Async upload boundary used by schedulers and source-independent tests.
 pub trait ArtifactUploader: Send + Sync {
+    /// Uploads one immutable artifact and reports progress.
     fn upload<'a>(
         &'a self,
         artifact: &crate::Artifact,
@@ -51,6 +77,7 @@ pub trait ArtifactUploader: Send + Sync {
     ) -> UploadFuture<'a>;
 }
 
+/// Verifies, uploads, and durably completes one job through an uploader.
 pub async fn upload_with_uploader<U: ArtifactUploader>(
     spool: &Spool,
     uploader: &U,
@@ -83,6 +110,7 @@ pub async fn upload_with_uploader<U: ArtifactUploader>(
     Ok(job)
 }
 
+/// Runs an upload while dropping the in-flight future on cancellation.
 pub async fn upload_with_uploader_cancelled<U: ArtifactUploader>(
     spool: &Spool,
     uploader: &U,
@@ -104,6 +132,7 @@ pub async fn upload_with_uploader_cancelled<U: ArtifactUploader>(
     }
 }
 
+/// Gates a new upload on a usable device credential.
 pub async fn upload_with_credential<U: ArtifactUploader>(
     spool: &Spool,
     uploader: &U,
@@ -119,12 +148,14 @@ pub async fn upload_with_credential<U: ArtifactUploader>(
     upload_with_uploader(spool, uploader, job).await
 }
 
+/// [`ArtifactUploader`] implementation backed by `lunsaran-entregar`.
 pub struct EntregarUploader {
     client: lunsaran_entregar::Client,
     project_id: Uuid,
     resume_dir: PathBuf,
 }
 impl EntregarUploader {
+    /// Creates an uploader backed by a published Lunsaran client.
     pub fn new(
         client: lunsaran_entregar::Client,
         project_id: Uuid,
@@ -228,6 +259,7 @@ fn map_entregar_error(error: lunsaran_entregar::Error) -> UploadError {
     }
 }
 
+/// Executes the synchronous protocol contract against abstract Lunsaran/TUS clients.
 pub fn upload<C: LunsaranClient, T: TusClient>(
     spool: &Spool,
     client: &C,

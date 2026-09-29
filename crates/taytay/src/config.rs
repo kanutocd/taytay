@@ -1,15 +1,20 @@
+//! Configuration and protected secret loading for an edge process.
+
 use serde::Deserialize;
 use std::{fs, path::Path};
 
 use crate::TaytayError;
 
 #[derive(Clone, Deserialize)]
+/// A secret value whose debug representation is always redacted.
 pub struct Secret(String);
 impl Secret {
+    /// Returns the secret for the narrow operation that needs it.
     pub fn expose(&self) -> &str {
         &self.0
     }
 }
+/// Loads a non-empty secret file and rejects group/other-readable Unix modes.
 pub fn load_secret_file(path: impl AsRef<Path>) -> Result<Secret, TaytayError> {
     let path = path.as_ref();
     let metadata = fs::metadata(path)?;
@@ -38,15 +43,23 @@ impl std::fmt::Debug for Secret {
 
 #[derive(Clone, Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
+/// Runtime configuration for the reference edge process.
 pub struct Config {
+    /// Local artifact spool and ledger directory.
     pub spool_dir: String,
+    /// Maximum number of bytes retained in the local spool.
     #[serde(default = "default_quota")]
     pub quota_bytes: u64,
+    /// Maximum number of concurrent upload workers.
     #[serde(default = "default_workers")]
     pub upload_workers: usize,
+    /// Lunsaran control-plane origin.
     pub lunsaran_base_url: String,
+    /// Organization scope for newly created upload sessions.
     pub organization_id: String,
+    /// Project scope for newly created upload sessions.
     pub project_id: String,
+    /// Protected file containing the device/workload credential.
     pub token_file: String,
 }
 
@@ -58,6 +71,7 @@ fn default_workers() -> usize {
 }
 
 impl Config {
+    /// Loads TOML configuration and validates security-sensitive fields.
     pub fn load(path: impl AsRef<Path>) -> Result<Self, TaytayError> {
         let raw = fs::read_to_string(path)?;
         let config: Self =
@@ -66,6 +80,7 @@ impl Config {
         Ok(config)
     }
 
+    /// Validates required values, quota/worker bounds, token path, and URL safety.
     pub fn validate(&self) -> Result<(), TaytayError> {
         if self.spool_dir.is_empty()
             || self.lunsaran_base_url.is_empty()
@@ -90,6 +105,7 @@ impl Config {
     }
 }
 
+/// Validates an HTTP(S) origin without userinfo, query, or fragment data.
 pub fn validate_base_url(value: &str) -> Result<(), TaytayError> {
     if !(value.starts_with("https://") || value.starts_with("http://"))
         || value.contains('?')

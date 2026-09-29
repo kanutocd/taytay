@@ -1,15 +1,25 @@
+//! Minimal contracts for Lunsaran upload sessions and the TUS data plane.
+
 use crate::{TaytayError, model::Artifact};
 
 #[derive(Clone, Debug, serde::Deserialize, serde::Serialize)]
+/// Lunsaran-issued capabilities for one artifact upload.
 pub struct UploadSession {
+    /// Scoped TUS endpoint; never log this value.
     pub upload_url: String,
+    /// Server expiry timestamp.
     pub expires_at: String,
+    /// Organization scope returned by Lunsaran.
     pub organization_id: String,
+    /// Project scope returned by Lunsaran.
     pub project_id: String,
+    /// Maximum preferred PATCH chunk size.
     pub chunk_size: u64,
+    /// Checksum algorithm negotiated by the session.
     pub checksum_algorithm: Option<String>,
 }
 impl UploadSession {
+    /// Verifies that a session belongs to the requested scope and is usable.
     pub fn validate_for(&self, organization_id: &str, project_id: &str) -> Result<(), TaytayError> {
         if self.organization_id != organization_id
             || self.project_id != project_id
@@ -23,7 +33,9 @@ impl UploadSession {
         Ok(())
     }
 }
+/// Control-plane client required by the synchronous upload contract.
 pub trait LunsaranClient: Send + Sync {
+    /// Creates a scoped upload session for an artifact.
     fn create_upload_session(
         &self,
         artifact: &Artifact,
@@ -31,16 +43,24 @@ pub trait LunsaranClient: Send + Sync {
         project_id: &str,
         idempotency_key: &str,
     ) -> Result<UploadSession, TaytayError>;
+    /// Reports a lifecycle state without exposing local credentials.
     fn report_state(&self, artifact: &Artifact, state: &str) -> Result<(), TaytayError>;
 }
 #[derive(Clone, Debug, Eq, PartialEq)]
+/// Server-confirmed TUS offset and declared upload length.
 pub struct TusOffset {
+    /// Number of bytes committed by the server.
     pub offset: u64,
+    /// Total artifact length declared by the server.
     pub length: u64,
 }
+/// Data-plane client for creating, inspecting, and patching TUS resources.
 pub trait TusClient: Send + Sync {
+    /// Creates a remote TUS resource and returns its opaque URL.
     fn create(&self, session: &UploadSession, artifact: &Artifact) -> Result<String, TaytayError>;
+    /// Reads the authoritative remote offset.
     fn head(&self, upload_url: &str) -> Result<TusOffset, TaytayError>;
+    /// Sends one bounded chunk and returns the new authoritative offset.
     fn patch(
         &self,
         upload_url: &str,
@@ -50,6 +70,7 @@ pub trait TusClient: Send + Sync {
     ) -> Result<TusOffset, TaytayError>;
 }
 
+/// Validates that a TUS response advanced exactly by the submitted chunk.
 pub fn validate_offset(
     previous: u64,
     returned: &TusOffset,
@@ -71,13 +92,20 @@ pub fn validate_offset(
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
+/// Safe representation of a Lunsaran session request for testing or transport.
 pub struct AuthenticatedRequest {
+    /// HTTP method.
     pub method: String,
+    /// Relative API path.
     pub path: String,
+    /// Bearer authorization header value.
     pub authorization: String,
+    /// Idempotency key for the artifact.
     pub idempotency_key: Option<String>,
+    /// JSON request body.
     pub body: serde_json::Value,
 }
+/// Builds a request value for a Lunsaran session transport or test fixture.
 pub fn create_session_request(
     base_path: &str,
     token: &str,

@@ -1,13 +1,22 @@
+//! Linux V4L2 format negotiation and bounded segmenting primitives.
+
 use crate::{TaytayError, model::SourceId};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
+/// A camera format candidate returned by V4L2 enumeration.
 pub struct V4l2Format {
+    /// Device node.
     pub device: String,
+    /// FourCC or negotiated pixel format.
     pub pixel_format: String,
+    /// Frame width in pixels.
     pub width: u32,
+    /// Frame height in pixels.
     pub height: u32,
+    /// Frames per second.
     pub fps: u32,
 }
+/// Selects the highest-capacity supported format in preferred pixel order.
 pub fn negotiate_format(
     supported: &[V4l2Format],
     preferred_pixels: &[&str],
@@ -30,16 +39,21 @@ pub fn negotiate_format(
         .ok_or_else(|| TaytayError::Configuration("no compatible V4L2 format".into()))
 }
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+/// Bounds for an in-memory camera segment.
 pub struct SegmentPolicy {
+    /// Maximum segment bytes.
     pub max_bytes: usize,
+    /// Maximum segment duration.
     pub max_duration_seconds: u64,
 }
+/// Accumulates frames until a byte or time bound is reached.
 pub struct Segmenter {
     policy: SegmentPolicy,
     bytes: Vec<u8>,
     elapsed_seconds: u64,
 }
 impl Segmenter {
+    /// Creates a segmenter with positive byte and duration limits.
     pub fn new(policy: SegmentPolicy) -> Result<Self, TaytayError> {
         if policy.max_bytes == 0 || policy.max_duration_seconds == 0 {
             return Err(TaytayError::Configuration(
@@ -52,6 +66,7 @@ impl Segmenter {
             elapsed_seconds: 0,
         })
     }
+    /// Adds a frame and returns a completed segment when a bound is reached.
     pub fn push(&mut self, frame: &[u8], elapsed_seconds: u64) -> Option<Vec<u8>> {
         self.bytes.extend_from_slice(frame);
         self.elapsed_seconds = self.elapsed_seconds.saturating_add(elapsed_seconds);
@@ -64,17 +79,20 @@ impl Segmenter {
             None
         }
     }
+    /// Flushes a final partial segment, if any.
     pub fn finish(&mut self) -> Option<Vec<u8>> {
         (!self.bytes.is_empty()).then(|| std::mem::take(&mut self.bytes))
     }
 }
 
+/// Tracks a configured V4L2 device's connection state.
 pub struct V4l2Adapter {
     source: SourceId,
     format: V4l2Format,
     connected: bool,
 }
 impl V4l2Adapter {
+    /// Creates a disconnected adapter for a validated format.
     pub fn new(source: SourceId, format: V4l2Format) -> Result<Self, TaytayError> {
         if format.width == 0 || format.height == 0 || format.fps == 0 {
             return Err(TaytayError::Configuration(
@@ -87,18 +105,23 @@ impl V4l2Adapter {
             connected: false,
         })
     }
+    /// Marks the device connected.
     pub fn connect(&mut self) {
         self.connected = true;
     }
+    /// Marks the device disconnected.
     pub fn disconnect(&mut self) {
         self.connected = false;
     }
+    /// Returns whether the adapter is connected.
     pub fn is_connected(&self) -> bool {
         self.connected
     }
+    /// Returns the source identity.
     pub fn source_id(&self) -> &SourceId {
         &self.source
     }
+    /// Returns the negotiated format.
     pub fn format(&self) -> &V4l2Format {
         &self.format
     }

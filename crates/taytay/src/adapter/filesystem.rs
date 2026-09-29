@@ -1,3 +1,5 @@
+//! Completion-safe adapter for files exported by an NVR or mounted share.
+
 use super::SourceAdapter;
 use crate::{
     TaytayError,
@@ -10,6 +12,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
+/// Emits a file only after two consecutive stable metadata observations.
 pub struct FilesystemAdapter {
     source: SourceId,
     directory: PathBuf,
@@ -18,6 +21,7 @@ pub struct FilesystemAdapter {
 }
 
 impl FilesystemAdapter {
+    /// Creates an adapter for a source directory.
     pub fn new(source: SourceId, directory: impl AsRef<Path>) -> Self {
         Self {
             source,
@@ -32,6 +36,7 @@ impl SourceAdapter for FilesystemAdapter {
     fn source_id(&self) -> &SourceId {
         &self.source
     }
+    /// Scans for newly stable files and computes their SHA-256 identities.
     fn poll(&mut self) -> Result<Vec<Artifact>, TaytayError> {
         let mut found = Vec::new();
         for entry in fs::read_dir(&self.directory)? {

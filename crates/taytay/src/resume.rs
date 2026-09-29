@@ -1,3 +1,5 @@
+//! Atomic, artifact-bound state for recovering interrupted TUS uploads.
+
 use crate::{TaytayError, model::Artifact};
 use serde::{Deserialize, Serialize};
 use std::{
@@ -6,16 +8,24 @@ use std::{
 };
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+/// Resume record bound to one artifact identity and uploader boundary.
 pub struct ResumeState {
+    /// Artifact identity used to reject accidental state reuse.
     pub artifact_id: String,
+    /// Original local path, used to prevent state reuse for another file.
     pub path: String,
+    /// Declared artifact size.
     pub size: u64,
+    /// SHA-256 identity bound to the record.
     pub checksum_sha256: Option<String>,
+    /// Uploader/API identity that owns the record.
     pub api_url: String,
+    /// Last server-confirmed offset.
     pub offset: u64,
 }
 
 impl ResumeState {
+    /// Creates a zero-offset record for an artifact.
     pub fn new(artifact: &Artifact, api_url: impl Into<String>, offset: u64) -> Self {
         Self {
             artifact_id: artifact.id.0.clone(),
@@ -26,6 +36,7 @@ impl ResumeState {
             offset,
         }
     }
+    /// Rejects reuse when artifact identity, checksum, size, or uploader differs.
     pub fn validate_for(&self, artifact: &Artifact, api_url: &str) -> Result<(), TaytayError> {
         if self.artifact_id != artifact.id.0
             || self.path != artifact.path
@@ -46,6 +57,7 @@ impl ResumeState {
     }
 }
 
+/// Atomically writes a resume record with restrictive permissions on Unix.
 pub fn save(path: impl AsRef<Path>, state: &ResumeState) -> Result<(), TaytayError> {
     let path = path.as_ref();
     if let Some(parent) = path.parent() {
@@ -61,9 +73,11 @@ pub fn save(path: impl AsRef<Path>, state: &ResumeState) -> Result<(), TaytayErr
     fs::rename(temp, path)?;
     Ok(())
 }
+/// Loads and deserializes a resume record.
 pub fn load(path: impl AsRef<Path>) -> Result<ResumeState, TaytayError> {
     Ok(serde_json::from_slice(&fs::read(path)?)?)
 }
+/// Returns Taytay's conventional resume path for one artifact identity.
 pub fn path_for(directory: impl AsRef<Path>, artifact_id: &str) -> PathBuf {
     directory
         .as_ref()

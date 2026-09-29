@@ -1,3 +1,5 @@
+//! Atomic JSON-lines ledger for durable upload jobs.
+
 use crate::{
     TaytayError,
     model::{ArtifactId, UploadJob},
@@ -10,12 +12,14 @@ use std::{
     sync::Mutex,
 };
 
+/// Durable job index persisted by atomic replacement.
 pub struct Ledger {
     path: std::path::PathBuf,
     jobs: Mutex<BTreeMap<ArtifactId, UploadJob>>,
 }
 
 impl Ledger {
+    /// Opens or creates a ledger and reconstructs its in-memory index.
     pub fn open(path: impl AsRef<Path>) -> Result<Self, TaytayError> {
         let path = path.as_ref().to_path_buf();
         let mut jobs = BTreeMap::new();
@@ -36,6 +40,7 @@ impl Ledger {
         })
     }
 
+    /// Inserts a new artifact job, rejecting duplicate identities.
     pub fn insert(&self, job: UploadJob) -> Result<(), TaytayError> {
         let mut jobs = self.jobs.lock().expect("ledger mutex poisoned");
         if jobs.contains_key(&job.artifact.id) {
@@ -45,6 +50,7 @@ impl Ledger {
         self.persist(&jobs)
     }
 
+    /// Replaces an existing job and durably persists the new state.
     pub fn update(&self, job: UploadJob) -> Result<(), TaytayError> {
         let mut jobs = self.jobs.lock().expect("ledger mutex poisoned");
         if !jobs.contains_key(&job.artifact.id) {
@@ -54,6 +60,7 @@ impl Ledger {
         self.persist(&jobs)
     }
 
+    /// Returns a snapshot of one job by identity.
     pub fn get(&self, id: &ArtifactId) -> Option<UploadJob> {
         self.jobs
             .lock()
@@ -61,6 +68,7 @@ impl Ledger {
             .get(id)
             .cloned()
     }
+    /// Returns jobs eligible for scheduling.
     pub fn pending(&self) -> Vec<UploadJob> {
         self.jobs
             .lock()
@@ -78,6 +86,7 @@ impl Ledger {
             .collect()
     }
 
+    /// Returns jobs explicitly paused by an operator.
     pub fn paused(&self) -> Vec<UploadJob> {
         self.jobs
             .lock()
@@ -88,6 +97,7 @@ impl Ledger {
             .collect()
     }
 
+    /// Pauses a job and persists the transition.
     pub fn pause(&self, id: &ArtifactId) -> Result<UploadJob, TaytayError> {
         let mut job = self
             .get(id)
@@ -97,6 +107,7 @@ impl Ledger {
         Ok(job)
     }
 
+    /// Resumes a paused job and persists the transition.
     pub fn resume(&self, id: &ArtifactId) -> Result<UploadJob, TaytayError> {
         let mut job = self
             .get(id)
@@ -105,6 +116,7 @@ impl Ledger {
         self.update(job.clone())?;
         Ok(job)
     }
+    /// Returns completed or retained jobs eligible for cleanup.
     pub fn completed(&self) -> Vec<UploadJob> {
         self.jobs
             .lock()

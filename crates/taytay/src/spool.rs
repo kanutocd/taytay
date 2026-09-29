@@ -1,3 +1,5 @@
+//! Filesystem spool with atomic publication and checksum verification.
+
 use crate::{
     TaytayError,
     ledger::Ledger,
@@ -10,6 +12,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
+/// Durable local artifact store and its associated job ledger.
 pub struct Spool {
     root: PathBuf,
     quota_bytes: u64,
@@ -17,6 +20,7 @@ pub struct Spool {
 }
 
 impl Spool {
+    /// Opens a spool directory and its restart-recoverable ledger.
     pub fn open(root: impl AsRef<Path>, quota_bytes: u64) -> Result<Self, TaytayError> {
         let root = root.as_ref().to_path_buf();
         fs::create_dir_all(&root)?;
@@ -28,6 +32,7 @@ impl Spool {
         })
     }
 
+    /// Publishes bytes atomically and creates a checksum-bound upload job.
     pub fn publish(
         &self,
         id: ArtifactId,
@@ -73,6 +78,7 @@ impl Spool {
         Ok(job)
     }
 
+    /// Recomputes and verifies the artifact checksum before transfer.
     pub fn verify(&self, job: &UploadJob) -> Result<(), TaytayError> {
         let mut file = File::open(&job.artifact.path)?;
         let mut hasher = Sha256::new();
@@ -93,17 +99,21 @@ impl Spool {
         }
     }
 
+    /// Returns the durable job ledger.
     pub fn ledger(&self) -> &Ledger {
         &self.ledger
     }
 
+    /// Pauses an artifact without deleting its local bytes.
     pub fn pause(&self, id: &ArtifactId) -> Result<UploadJob, TaytayError> {
         self.ledger.pause(id)
     }
 
+    /// Resumes a paused artifact for later scheduling.
     pub fn resume(&self, id: &ArtifactId) -> Result<UploadJob, TaytayError> {
         self.ledger.resume(id)
     }
+    /// Removes files only for jobs already completed or retained.
     pub fn cleanup_completed(&self) -> Result<usize, TaytayError> {
         let jobs = self.ledger.completed();
         let mut removed = 0;
@@ -124,6 +134,7 @@ impl Spool {
             .sum())
     }
 
+    /// Returns bytes used by regular files in the spool directory.
     pub fn bytes_used(&self) -> Result<u64, TaytayError> {
         self.used_bytes()
     }

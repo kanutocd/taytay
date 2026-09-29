@@ -1,18 +1,30 @@
+//! ONVIF discovery, profile selection, and event parsing boundaries.
+
 use crate::{TaytayError, events::MotionEvent, model::SourceId};
 #[derive(Clone, Debug, Eq, PartialEq)]
+/// Parsed ONVIF device discovery result.
 pub struct OnvifDevice {
+    /// Device service endpoint.
     pub endpoint: String,
+    /// Optional human-readable device name.
     pub name: Option<String>,
+    /// Profile tokens advertised by the device.
     pub profile_tokens: Vec<String>,
 }
 #[derive(Clone, Debug, Eq, PartialEq)]
+/// Parsed ONVIF event notification.
 pub struct OnvifEvent {
+    /// Event message identity.
     pub id: String,
+    /// ONVIF topic describing the event.
     pub topic: String,
+    /// Source timestamp.
     pub observed_at: String,
+    /// Taytay source identity.
     pub source: SourceId,
 }
 impl OnvifEvent {
+    /// Converts the protocol event into Taytay's common motion-event model.
     pub fn as_motion_event(&self) -> MotionEvent {
         MotionEvent {
             id: self.id.clone(),
@@ -23,6 +35,7 @@ impl OnvifEvent {
         }
     }
 }
+/// Parses the stable identity, topic, and timestamp from an ONVIF event.
 pub fn parse_event(xml: &str, source: SourceId) -> Result<OnvifEvent, TaytayError> {
     let id = local_element(xml, "MessageId")
         .ok_or_else(|| TaytayError::Protocol("ONVIF event has no message ID".into()))?;
@@ -38,6 +51,7 @@ pub fn parse_event(xml: &str, source: SourceId) -> Result<OnvifEvent, TaytayErro
     })
 }
 impl OnvifDevice {
+    /// Selects the first preferred profile, or the first advertised profile.
     pub fn select_profile(&self, preferred: &[&str]) -> Option<&str> {
         preferred
             .iter()
@@ -50,6 +64,7 @@ impl OnvifDevice {
             .or_else(|| self.profile_tokens.first().map(String::as_str))
     }
 }
+/// Parses an ONVIF probe response into a device/profile description.
 pub fn parse_probe(xml: &str) -> Result<OnvifDevice, TaytayError> {
     let endpoint = local_element(xml, "XAddrs")
         .ok_or_else(|| TaytayError::Protocol("ONVIF probe has no XAddrs".into()))?;
@@ -84,17 +99,21 @@ fn local_element<'a>(xml: &'a str, local_name: &str) -> Option<&'a str> {
         })?;
     Some(xml[opening_end + 1..closing_start].trim())
 }
+/// Holds parsed ONVIF device information for a source integration.
 pub struct OnvifAdapter {
     source: SourceId,
     device: OnvifDevice,
 }
 impl OnvifAdapter {
+    /// Creates an adapter from a discovery result.
     pub fn new(source: SourceId, device: OnvifDevice) -> Self {
         Self { source, device }
     }
+    /// Returns the configured source identity.
     pub fn source_id(&self) -> &SourceId {
         &self.source
     }
+    /// Returns the parsed device information.
     pub fn device(&self) -> &OnvifDevice {
         &self.device
     }

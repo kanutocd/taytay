@@ -1,3 +1,5 @@
+//! File-based drone, mission, and LiDAR artifact ingestion.
+
 use crate::{
     TaytayError,
     model::{Artifact, ArtifactId, SourceId},
@@ -9,24 +11,36 @@ use std::{
     path::{Path, PathBuf},
 };
 
+/// Scans field artifacts and optionally attaches JSON sidecar metadata.
 pub struct FieldFileAdapter {
     source: SourceId,
     directory: PathBuf,
     extensions: Vec<String>,
 }
 #[derive(Clone, Debug, Default, PartialEq, serde::Deserialize, serde::Serialize)]
+/// Metadata commonly associated with drone and LiDAR files.
 pub struct FieldMetadata {
+    /// Mission or flight identifier.
     pub flight_id: Option<String>,
+    /// Sensor identifier.
     pub sensor_id: Option<String>,
+    /// Capture timestamp.
     pub captured_at: Option<String>,
+    /// WGS84 latitude, when available.
     pub latitude: Option<f64>,
+    /// WGS84 longitude, when available.
     pub longitude: Option<f64>,
+    /// Altitude in meters.
     pub altitude_m: Option<f64>,
+    /// Coordinate reference system for spatial data.
     pub coordinate_reference_system: Option<String>,
+    /// Number of points in a point-cloud artifact.
     pub point_count: Option<u64>,
+    /// Processing or acquisition provenance.
     pub provenance: Option<String>,
 }
 impl FieldMetadata {
+    /// Validates coordinates and point-cloud invariants.
     pub fn validate(&self) -> Result<(), TaytayError> {
         if self.latitude.is_some_and(|x| !(-90.0..=90.0).contains(&x))
             || self
@@ -46,6 +60,7 @@ impl FieldMetadata {
     }
 }
 impl FieldFileAdapter {
+    /// Creates a scanner restricted to the supplied file extensions.
     pub fn new(source: SourceId, directory: impl AsRef<Path>, extensions: &[&str]) -> Self {
         Self {
             source,
@@ -53,6 +68,7 @@ impl FieldFileAdapter {
             extensions: extensions.iter().map(|x| x.to_ascii_lowercase()).collect(),
         }
     }
+    /// Scans field files and computes checksum-bound artifacts.
     pub fn scan(&self) -> Result<Vec<Artifact>, TaytayError> {
         let mut artifacts = Vec::new();
         for e in fs::read_dir(&self.directory)? {
@@ -91,6 +107,7 @@ impl FieldFileAdapter {
         }
         Ok(artifacts)
     }
+    /// Reads and validates one JSON metadata sidecar.
     pub fn metadata_from_sidecar(
         &self,
         path: impl AsRef<Path>,
@@ -100,6 +117,7 @@ impl FieldFileAdapter {
         metadata.validate()?;
         Ok(metadata)
     }
+    /// Scans files and attaches a same-stem `.json` sidecar when present.
     pub fn scan_with_sidecars(&self) -> Result<Vec<Artifact>, TaytayError> {
         let mut artifacts = self.scan()?;
         for artifact in &mut artifacts {

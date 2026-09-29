@@ -1,3 +1,5 @@
+//! Operational policy, health, and counter helpers.
+
 use crate::{
     model::{ArtifactState, UploadJob},
     spool::Spool,
@@ -8,11 +10,15 @@ use std::{
 };
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+/// Age-based retention policy for completed and failed jobs.
 pub struct RetentionPolicy {
+    /// How long completed artifacts remain eligible for retention.
     pub completed_for: Duration,
+    /// How long failed artifacts remain eligible for retention.
     pub failed_for: Duration,
 }
 impl RetentionPolicy {
+    /// Returns whether a state with the supplied age should be retained.
     pub fn keep(&self, state: &ArtifactState, age: Duration) -> bool {
         match state {
             ArtifactState::Completed | ArtifactState::Retained => age < self.completed_for,
@@ -23,23 +29,32 @@ impl RetentionPolicy {
 }
 
 #[derive(Debug, Default)]
+/// Low-cardinality atomic counters for edge operations.
 pub struct Counters {
+    /// Number of completed uploads.
     pub uploads: AtomicU64,
+    /// Number of retries recorded.
     pub retries: AtomicU64,
+    /// Number of bytes transferred.
     pub bytes_transferred: AtomicU64,
+    /// Number of source-side errors.
     pub source_errors: AtomicU64,
 }
 impl Counters {
+    /// Records a completed upload and its byte count.
     pub fn record_upload(&self, bytes: u64) {
         self.uploads.fetch_add(1, Ordering::Relaxed);
         self.bytes_transferred.fetch_add(bytes, Ordering::Relaxed);
     }
+    /// Records one retry.
     pub fn record_retry(&self) {
         self.retries.fetch_add(1, Ordering::Relaxed);
     }
+    /// Records one source error.
     pub fn record_source_error(&self) {
         self.source_errors.fetch_add(1, Ordering::Relaxed);
     }
+    /// Reads a counter snapshot.
     pub fn snapshot(&self) -> CounterSnapshot {
         CounterSnapshot {
             uploads: self.uploads.load(Ordering::Relaxed),
@@ -50,23 +65,36 @@ impl Counters {
     }
 }
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+/// Serializable counter values for metrics rendering.
 pub struct CounterSnapshot {
+    /// Completed uploads.
     pub uploads: u64,
+    /// Recorded retries.
     pub retries: u64,
+    /// Transferred bytes.
     pub bytes_transferred: u64,
+    /// Source errors.
     pub source_errors: u64,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
+/// Readiness and spool-size view for operators.
 pub struct HealthSnapshot {
+    /// Whether the spool is within a nonzero configured quota.
     pub ready: bool,
+    /// Number of jobs eligible for scheduling.
     pub pending_jobs: usize,
+    /// Number of completed or retained jobs.
     pub completed_jobs: usize,
+    /// Bytes currently used by spool files.
     pub spool_bytes: u64,
+    /// Configured spool quota.
     pub quota_bytes: u64,
+    /// Time at which this view was produced.
     pub generated_at: SystemTime,
 }
 impl HealthSnapshot {
+    /// Builds a health view from the durable spool and ledger.
     pub fn from_spool(spool: &Spool, quota_bytes: u64) -> Result<Self, crate::TaytayError> {
         let pending = spool.ledger().pending();
         let completed = spool.ledger().completed();
@@ -82,6 +110,7 @@ impl HealthSnapshot {
     }
 }
 
+/// Persists a failed lifecycle transition and its operator-safe error text.
 pub fn record_failure(
     spool: &Spool,
     mut job: UploadJob,
