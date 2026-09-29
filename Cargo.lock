@@ -1131,7 +1131,7 @@ dependencies = [
 
 [[package]]
 name = "taytay"
-version = "0.0.1"
+version = "0.1.0"
 dependencies = [
  "lunsaran-entregar",
  "lunsaran-entregar-mock",
