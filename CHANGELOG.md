@@ -41,3 +41,4 @@
 - Added public-client conformance tests for transient PATCH failures, stale offsets, and pre-flight cancellation.
 - Added deterministic event-to-capture windows, ONVIF event parsing, V4L2 format negotiation, RTSP timestamp/codec validation, and field sidecar metadata association.
 - Added explicit device-credential enrollment, activation, rotation, revocation, expiry, and authorization gating for new upload sessions.
+- Added Prometheus-compatible redacted metrics output, CI coverage artifact retention, and a standalone mock acceptance command.

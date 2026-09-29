@@ -21,3 +21,10 @@ jobs:
         uses: taiki-e/install-action@cargo-llvm-cov
       - run: scripts/coverage.sh
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      - name: retain coverage report
+        if: always() && github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@v4
+        with:
+          name: taytay-coverage
+          path: target/coverage/lcov.info
+          if-no-files-found: ignore
