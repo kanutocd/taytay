@@ -2,11 +2,21 @@
 
 Taytay is a Rust Linux edge bridge for Lunsaran. It receives artifacts from local or networked sources, stores them durably while offline, and uploads them to Lunsaran through Brutus using TUS.
 
+Consumer documentation is published with Zensical at
+<https://kanutocd.github.io/taytay>. Start with the [quick start](docs/quickstart.md)
+or the [Rust crate guide](docs/crate-guide.md) if you are embedding Taytay in
+an OEM device, edge worker, or source integration.
+
 The first source adapter targets existing CCTV/NVR installations. The core remains source-independent so later adapters can support drones, LiDAR systems, USB cameras, filesystems, and other field devices.
 
 ## Project status
 
-The `0.0.1` harness and durable local/upload foundation are implemented, including operator diagnostics, secure resume state, bounded source segmenting, event deduplication, and health counters. Source-specific hardware integrations, live service clients, and the `entregar` adapter remain behind typed boundaries and require external libraries, devices, or acceptance fixtures before production release.
+The durable local/upload foundation and the published `lunsaran-entregar`
+integration are implemented, including operator diagnostics, secure resume
+state, bounded source segmenting, event deduplication, health counters, and
+deterministic mock acceptance. Source-specific hardware capture, live service
+acceptance, and field compatibility still require external devices or
+environments.
 
 The service validates TOML configuration, publishes artifacts atomically into a quota-bounded spool, persists resumable jobs, verifies SHA-256 checksums, and exposes source/control-plane/TUS seams for local fixtures. See [operations](docs/OPERATIONS.md), [security](docs/SECURITY.md), and [compatibility](docs/COMPATIBILITY.md).
 

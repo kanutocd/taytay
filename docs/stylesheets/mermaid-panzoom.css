@@ -1,0 +1,129 @@
+/*
+ * Mermaid pan/zoom viewer styles adapted from poorman-aws.
+ * Copyright (c) 2026 Ken C. Demanawa; licensed under the MIT License.
+ */
+.mermaid-panzoom {
+  position: relative;
+  margin: 1rem 0;
+  border: 1px solid var(--md-default-fg-color--lightest);
+  border-radius: 0.25rem;
+  background: var(--md-default-bg-color);
+}
+
+.mermaid-panzoom__toolbar {
+  position: absolute;
+  z-index: 2;
+  top: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.115rem;
+  padding: 0.115rem;
+  border: 1px solid var(--md-default-fg-color);
+  border-radius: 0 0 0 0.25rem;
+  background: var(--md-default-fg-color);
+  color: var(--md-default-bg-color);
+  box-shadow: var(--md-shadow-z1);
+  opacity: 0.8;
+  transition: opacity 120ms ease-out;
+}
+
+.mermaid-panzoom__toolbar:hover,
+.mermaid-panzoom__toolbar:focus-within {
+  opacity: 1;
+}
+
+.mermaid-panzoom__button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.2rem;
+  height: 1.2rem;
+  padding: 0;
+  color: inherit;
+  border-radius: 0.15rem;
+  cursor: pointer;
+}
+
+.mermaid-panzoom__icon {
+  font-size: 0.9rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.mermaid-panzoom__button:hover,
+.mermaid-panzoom__button:focus-visible {
+  background: var(--md-accent-fg-color--transparent);
+  outline: none;
+  box-shadow: inset 0 0 0 2px var(--md-accent-fg-color);
+}
+
+.mermaid-panzoom__button:disabled {
+  opacity: 0.3;
+  filter: grayscale(1);
+  cursor: not-allowed;
+}
+
+.mermaid-panzoom__zoom-level {
+  min-width: 2.10rem;
+  color: inherit;
+  font-weight: 800;
+  font-size: 0.40rem;
+  line-height: 1;
+  opacity: 0.85;
+  width: 0.80rem;
+  text-align: center;
+  margin: 0;
+}
+
+.mermaid-panzoom__viewport {
+  min-height: 8rem;
+  max-height: 70vh;
+  overflow: hidden;
+  cursor: grab;
+}
+
+.mermaid-panzoom__viewport.is-dragging {
+  cursor: grabbing;
+  user-select: none;
+}
+
+.mermaid-panzoom:fullscreen {
+  display: flex;
+  flex-direction: column;
+  width: 100vw;
+  height: 100vh;
+  padding: 1rem;
+  background: var(--md-default-bg-color);
+}
+
+.mermaid-panzoom:fullscreen .mermaid-panzoom__viewport {
+  flex: 1;
+  max-height: none;
+}
+
+.mermaid-panzoom:fullscreen .mermaid-panzoom__toolbar {
+  gap: 0.3rem;
+  padding: 0.4rem;
+}
+
+.mermaid-panzoom:fullscreen .mermaid-panzoom__button {
+  width: 2.5rem;
+  height: 2.5rem;
+}
+
+.mermaid-panzoom:fullscreen .mermaid-panzoom__icon {
+  font-size: 1.5rem;
+}
+
+.mermaid-panzoom:fullscreen .mermaid-panzoom__zoom-level {
+  min-width: 4rem;
+  width: auto;
+  font-size: 1rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mermaid-panzoom .mermaid {
+    transition: none;
+  }
+}

@@ -1,0 +1,63 @@
+[project]
+site_name = "Taytay"
+site_url = "https://kanutocd.github.io/taytay"
+repo_url = "https://github.com/kanutocd/taytay"
+repo_name = "kanutocd/taytay"
+docs_dir = "docs"
+site_dir = "site"
+edit_uri = ""
+
+nav = [
+  { "Overview" = "index.md" },
+  { "Quick start" = "quickstart.md" },
+  { "Architecture" = "architecture.md" },
+  { "Rust crate guide" = "crate-guide.md" },
+  { "Durability and recovery" = "durability.md" },
+  { "Uploads and TUS" = "uploads.md" },
+  { "Source adapters" = "sources.md" },
+  { "Operations" = "operations.md" },
+  { "Security" = "security.md" },
+  { "Development" = "development.md" },
+]
+
+extra_javascript = ["javascripts/mermaid-panzoom.js"]
+extra_css = ["stylesheets/mermaid-panzoom.css"]
+
+[project.theme]
+variant = "classic"
+language = "en"
+features = [
+  "navigation.instant",
+  "navigation.tracking",
+  "navigation.expand",
+  "navigation.footer",
+  "search.suggest",
+  "header.autohide",
+]
+
+[project.theme.icon]
+repo = "fontawesome/brands/github"
+
+[[project.theme.palette]]
+media = "(prefers-color-scheme: light)"
+scheme = "default"
+primary = "indigo"
+toggle.icon = "lucide/moon"
+toggle.name = "Switch to dark mode"
+
+[[project.theme.palette]]
+media = "(prefers-color-scheme: dark)"
+scheme = "slate"
+primary = "blue"
+toggle.icon = "lucide/sun"
+toggle.name = "Switch to light mode"
+
+[project.markdown_extensions]
+admonition = {}
+meta = {}
+pymdownx.highlight.anchor_linenums = true
+pymdownx.inlinehilite = {}
+pymdownx.superfences.custom_fences = [
+  { name = "mermaid", class = "mermaid", format = "pymdownx.superfences.fence_code_format" },
+]
+pymdownx.tabbed.alternate_style = true

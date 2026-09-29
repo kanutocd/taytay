@@ -4,6 +4,10 @@
 
 ### Public integrator boundary
 
+- Added a Zensical documentation site focused on crate consumers, including
+  quick start, architecture, durability, uploader, source-adapter, operations,
+  security, and development guides with Mermaid diagrams, plus a CI build
+  check for documentation changes.
 - Moved repository-specific engineering instructions into the private
   `taytay-saas` harness; the public repository no longer carries `AGENTS.md`.
 - Added public crate metadata and README linkage so `taytay` packages with
