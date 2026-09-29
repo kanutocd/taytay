@@ -2,6 +2,7 @@
 
 pub mod adapter;
 pub mod config;
+pub mod credential;
 pub mod diagnostics;
 pub mod error;
 pub mod events;

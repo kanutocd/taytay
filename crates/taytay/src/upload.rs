@@ -95,6 +95,21 @@ pub async fn upload_with_uploader_cancelled<U: ArtifactUploader>(
     }
 }
 
+pub async fn upload_with_credential<U: ArtifactUploader>(
+    spool: &Spool,
+    uploader: &U,
+    job: UploadJob,
+    credential: &crate::credential::DeviceCredential,
+    now: std::time::SystemTime,
+) -> Result<UploadJob, UploadError> {
+    if !credential.usable_for_new_session(now) {
+        return Err(UploadError::Unauthorized(
+            "device credential is not active or has expired".into(),
+        ));
+    }
+    upload_with_uploader(spool, uploader, job).await
+}
+
 pub struct EntregarUploader {
     client: lunsaran_entregar::Client,
     project_id: Uuid,
