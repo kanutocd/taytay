@@ -78,6 +78,23 @@ pub async fn upload_with_uploader<U: ArtifactUploader>(
     Ok(job)
 }
 
+pub async fn upload_with_uploader_cancelled<U: ArtifactUploader>(
+    spool: &Spool,
+    uploader: &U,
+    job: UploadJob,
+    cancellation: &crate::scheduler::CancellationToken,
+) -> Result<UploadJob, UploadError> {
+    if cancellation.is_cancelled() {
+        return Err(UploadError::Cancelled);
+    }
+    let result = upload_with_uploader(spool, uploader, job).await;
+    if cancellation.is_cancelled() {
+        Err(UploadError::Cancelled)
+    } else {
+        result
+    }
+}
+
 pub struct EntregarUploader {
     client: lunsaran_entregar::Client,
     project_id: Uuid,
@@ -419,6 +436,93 @@ mod tests {
         assert_eq!(completed.offset, 11);
         assert_eq!(server.offset().await, 11);
         server.shutdown();
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    async fn upload_with_mock_behavior(behavior: lunsaran_entregar_mock::MockBehavior) -> u64 {
+        let server = lunsaran_entregar_mock::MockServer::start_with_behavior(behavior)
+            .await
+            .unwrap();
+        let root = std::env::temp_dir().join(format!(
+            "taytay-entregar-fault-{}",
+            SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        let spool = Spool::open(&root, 1024).unwrap();
+        let job = spool
+            .publish(
+                ArtifactId::new("fault"),
+                SourceId::new("test"),
+                "text/plain".into(),
+                b"fault-upload",
+                None,
+                serde_json::json!({}),
+            )
+            .unwrap();
+        let mut config = lunsaran_entregar::ClientConfig::new(server.base_url(), "device-token");
+        config.retry_attempts = 1;
+        let client = lunsaran_entregar::Client::new(config).unwrap();
+        let uploader = EntregarUploader::new(client, Uuid::nil(), root.join("resume"));
+        let completed = upload_with_uploader(&spool, &uploader, job).await.unwrap();
+        let offset = server.offset().await;
+        assert_eq!(completed.offset, 12);
+        server.shutdown();
+        std::fs::remove_dir_all(root).unwrap();
+        offset
+    }
+
+    #[tokio::test]
+    async fn entregar_uploader_recovers_from_transient_patch_failure() {
+        assert_eq!(
+            upload_with_mock_behavior(lunsaran_entregar_mock::MockBehavior {
+                fail_first_patch: true,
+                ..Default::default()
+            })
+            .await,
+            12
+        );
+    }
+
+    #[tokio::test]
+    async fn entregar_uploader_recovers_from_stale_offset() {
+        assert_eq!(
+            upload_with_mock_behavior(lunsaran_entregar_mock::MockBehavior {
+                return_stale_offset_once: true,
+                ..Default::default()
+            })
+            .await,
+            12
+        );
+    }
+
+    #[tokio::test]
+    async fn cancelled_upload_is_rejected_before_start() {
+        let root = std::env::temp_dir().join(format!(
+            "taytay-cancel-{}",
+            SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        let spool = Spool::open(&root, 1024).unwrap();
+        let job = spool
+            .publish(
+                ArtifactId::new("cancel"),
+                SourceId::new("test"),
+                "x".into(),
+                b"x",
+                None,
+                serde_json::json!({}),
+            )
+            .unwrap();
+        let token = crate::scheduler::CancellationToken::default();
+        token.cancel();
+        assert_eq!(
+            upload_with_uploader_cancelled(&spool, &FakeUploader, job, &token).await,
+            Err(UploadError::Cancelled)
+        );
         std::fs::remove_dir_all(root).unwrap();
     }
 }
