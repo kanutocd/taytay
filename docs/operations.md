@@ -92,3 +92,23 @@ This covers the happy path, checksum propagation, transient PATCH failure,
 stale-offset recovery, expired-session classification, and pre-flight
 cancellation against a local mock. It does not replace a hosted
 Lunsaran/Brutus acceptance environment or hardware testing.
+
+For a provisioned disposable Lunsaran API/PostgreSQL/Brutus environment, run
+the opt-in cross-repository acceptance harness:
+
+```bash
+TAYTAY_CROSS_REPO=1 \
+TAYTAY_LUNSARAN_BASE_URL=http://127.0.0.1:8080 \
+TAYTAY_LUNSARAN_TOKEN_FILE=/secure/path/device.token \
+TAYTAY_ORGANIZATION_ID=ORG_UUID \
+TAYTAY_PROJECT_ID=PROJECT_UUID \
+TAYTAY_LUNSARAN_COMPOSE_FILES="/path/lunsaran/infra/compose.yaml /path/lunsaran/infra/compose.dev.yaml" \
+TAYTAY_BRUTUS_COMPOSE_FILE=/path/brutus/docker-compose.yaml \
+scripts/acceptance-cross-repo.sh
+```
+
+The credential must already be enrolled for the project. The harness uses an
+isolated Compose project, creates one disposable ledger artifact, verifies
+completion and redacted output, and removes its stack and temporary files on
+exit. Set `TAYTAY_KEEP_CROSS_REPO_STACK=1` only when inspecting a failed
+environment manually.

@@ -10,6 +10,8 @@
   durable spool, and drain pending uploads through bounded Entregar workers.
 - Remove the unused legacy `LunsaranClient`/`TusClient` protocol model and make
   `ArtifactUploader` the sole custom transport boundary.
+- Add an opt-in disposable cross-repository acceptance harness for the real
+  Taytay, Lunsaran, and Brutus upload path with credential-safe assertions.
 - Renamed the publishable crate from `taytay` to `lunsaran-taytay`; the
   installed service and `taytay` binary name remain unchanged.
 

@@ -43,3 +43,8 @@ Run `scripts/acceptance-mock.sh` to exercise the published
 `lunsaran-entregar` client against its local mock, including transient PATCH
 failure and stale-offset recovery. This test does not contact hosted Lunsaran,
 Brutus, or object storage.
+
+The opt-in `scripts/acceptance-cross-repo.sh` harness runs the real binary
+against explicitly supplied disposable Lunsaran and Brutus Compose stacks. It
+requires a pre-enrolled project credential and removes its isolated stacks and
+temporary spool when it exits.

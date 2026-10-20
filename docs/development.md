@@ -30,6 +30,12 @@ control-plane and TUS behavior. Taytay’s acceptance script exercises normal
 transfer, transient PATCH failure, stale offsets, checksum propagation, and cancellation without
 network access to production services.
 
+The cross-repository harness is deliberately opt-in because it requires a
+provisioned Lunsaran API/PostgreSQL/Brutus environment and an enrolled device
+credential. Run `scripts/acceptance-cross-repo.sh` with the documented
+`TAYTAY_CROSS_REPO=1` environment when that disposable environment is
+available.
+
 When adding an adapter, test at least:
 
 - incomplete-file suppression;

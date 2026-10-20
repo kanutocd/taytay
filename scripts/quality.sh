@@ -11,3 +11,4 @@ cargo fmt --all -- --check
 cargo check --workspace --all-targets --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings
 cargo test --workspace --all-features
+scripts/acceptance-cross-repo.sh
