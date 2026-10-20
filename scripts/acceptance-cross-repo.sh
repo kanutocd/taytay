@@ -48,6 +48,7 @@ done
 }
 
 compose_project="taytay-cross-repo-${RANDOM}-${RANDOM}"
+use_existing_stack="${TAYTAY_USE_EXISTING_STACK:-0}"
 spool_dir="$(mktemp -d "${TMPDIR:-/tmp}/taytay-cross-repo.XXXXXX")"
 config_file="$spool_dir/taytay.toml"
 artifact_file="$spool_dir/cross-repo.artifact"
@@ -55,7 +56,7 @@ output_file="$spool_dir/taytay.out"
 
 cleanup() {
   set +e
-  if [[ "${TAYTAY_KEEP_CROSS_REPO_STACK:-0}" != "1" ]]; then
+  if [[ "$use_existing_stack" != "1" && "${TAYTAY_KEEP_CROSS_REPO_STACK:-0}" != "1" ]]; then
     docker compose -p "$compose_project" "${lunsaran_compose_args[@]}" down --volumes --remove-orphans >/dev/null 2>&1
     docker compose -p "$compose_project" -f "$TAYTAY_BRUTUS_COMPOSE_FILE" down --volumes --remove-orphans >/dev/null 2>&1
   fi
@@ -63,8 +64,10 @@ cleanup() {
 }
 trap cleanup EXIT INT TERM
 
-docker compose -p "$compose_project" "${lunsaran_compose_args[@]}" up -d --wait
-docker compose -p "$compose_project" -f "$TAYTAY_BRUTUS_COMPOSE_FILE" up -d --wait
+if [[ "$use_existing_stack" != "1" ]]; then
+  docker compose -p "$compose_project" "${lunsaran_compose_args[@]}" up -d --wait
+  docker compose -p "$compose_project" -f "$TAYTAY_BRUTUS_COMPOSE_FILE" up -d --wait
+fi
 
 printf 'taytay-cross-repository-payload\n' >"$artifact_file"
 checksum="$(sha256sum "$artifact_file" | awk '{print $1}')"

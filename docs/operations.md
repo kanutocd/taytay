@@ -111,4 +111,5 @@ The credential must already be enrolled for the project. The harness uses an
 isolated Compose project, creates one disposable ledger artifact, verifies
 completion and redacted output, and removes its stack and temporary files on
 exit. Set `TAYTAY_KEEP_CROSS_REPO_STACK=1` only when inspecting a failed
-environment manually.
+environment manually. If the supplied API and Brutus stack is already running,
+set `TAYTAY_USE_EXISTING_STACK=1`; this mode never stops containers.

@@ -12,6 +12,8 @@
   `ArtifactUploader` the sole custom transport boundary.
 - Add an opt-in disposable cross-repository acceptance harness for the real
   Taytay, Lunsaran, and Brutus upload path with credential-safe assertions.
+- Allow the cross-repository harness to target an already-running provisioned
+  stack without taking ownership of its containers.
 - Renamed the publishable crate from `taytay` to `lunsaran-taytay`; the
   installed service and `taytay` binary name remain unchanged.
 
