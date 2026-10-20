@@ -2,21 +2,33 @@
 
 ## Installation
 
-Create the unprivileged `taytay` account, install the binary as `/usr/local/bin/taytay`, create `/etc/taytay`, `/var/lib/taytay`, and `/var/log/taytay`, and install `packaging/taytay.service`. Configuration and token files must be owned by `root:taytay` with mode `0640`; the spool must be owned by `taytay:taytay` with mode `0700`.
+Create the unprivileged `taytay` account, install the binary as
+`/usr/local/bin/taytay`, create `/etc/taytay`, `/var/lib/taytay`, and
+`/var/log/taytay`, and install `packaging/taytay.service`. Configuration files
+may be owned by `root:taytay` with mode `0640`; the token file must be readable
+only by the service account with mode `0600`. The spool must be owned by
+`taytay:taytay` with mode `0700`.
 
-Validate configuration before starting:
+Validate configuration before starting the service:
 
-```text
-taytay /etc/taytay/taytay.toml
+```bash
+taytay --check-config /etc/taytay/taytay.toml
 systemctl enable --now taytay
 systemctl status taytay
 ```
 
 For a non-mutating configuration check and machine-readable local readiness:
 
-```text
+```bash
 taytay --check-config /etc/taytay/taytay.toml
 taytay --status /etc/taytay/taytay.toml
+```
+
+The normal runtime invocation drains the pending snapshot with bounded
+workers, retries transient failures, and exits after that snapshot completes:
+
+```bash
+taytay /etc/taytay/taytay.toml
 ```
 
 The library also exposes redacted Prometheus-compatible counters for uploads,
@@ -47,4 +59,5 @@ Brutus, or object storage.
 The opt-in `scripts/acceptance-cross-repo.sh` harness runs the real binary
 against explicitly supplied disposable Lunsaran and Brutus Compose stacks. It
 requires a pre-enrolled project credential and removes its isolated stacks and
-temporary spool when it exits.
+temporary spool when it exits. Set `TAYTAY_USE_EXISTING_STACK=1` when targeting
+an already-running provisioned stack; that mode does not stop its containers.

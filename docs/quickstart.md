@@ -13,6 +13,7 @@ edge boundary. Pin the version selected by your integration review:
 ```toml
 [dependencies]
 lunsaran-taytay = "0.2.0"
+serde_json = "1.0"
 ```
 
 The reference uploader uses the published `lunsaran-entregar` client. Your

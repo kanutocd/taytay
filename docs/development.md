@@ -27,8 +27,8 @@ report toolchain failures separately from test failures.
 
 The published `lunsaran-entregar-mock` crate provides deterministic local
 control-plane and TUS behavior. Taytay’s acceptance script exercises normal
-transfer, transient PATCH failure, stale offsets, checksum propagation, and cancellation without
-network access to production services.
+transfer, transient PATCH failure, stale offsets, checksum propagation, and
+cancellation without network access to production services.
 
 The cross-repository harness is deliberately opt-in because it requires a
 provisioned Lunsaran API/PostgreSQL/Brutus environment and an enrolled device
@@ -54,7 +54,7 @@ When adding upload behavior, test:
 - session scope validation;
 - idempotent retries;
 - authoritative offset recovery;
-- authorization and expiry handling; and
+- authorization and expiry handling;
 - checksum propagation and server-side checksum enforcement; and
 - redaction of credentials and signed URLs.
 
