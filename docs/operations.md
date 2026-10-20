@@ -14,8 +14,8 @@ spool_dir = "/var/lib/taytay/spool"
 quota_bytes = 10737418240
 upload_workers = 2
 lunsaran_base_url = "https://lunsaran.example"
-organization_id = "org-example"
-project_id = "project-example"
+organization_id = "00000000-0000-0000-0000-000000000001"
+project_id = "00000000-0000-0000-0000-000000000002"
 token_file = "/etc/taytay/lunsaran.token"
 ```
 
@@ -40,6 +40,19 @@ systemctl status taytay
 `--status` emits machine-readable readiness, pending/completed job counts, and
 spool usage. It does not print tokens, URLs containing credentials, filenames,
 or media metadata.
+
+To run the upload workers against pending jobs, pass the configuration path as
+the command. The process loads the protected token, drains the durable pending
+snapshot with bounded concurrency and retries, and exits after the snapshot is
+complete:
+
+```bash
+taytay /etc/taytay/taytay.toml
+```
+
+An interrupted upload remains recoverable in the ledger and is picked up by a
+later invocation. Authorization failures and retry exhaustion leave a safe
+failure state in the ledger and return a non-zero exit status.
 
 Pause or resume a durable artifact by ID when an operator needs to stop retry
 activity without deleting the local artifact:

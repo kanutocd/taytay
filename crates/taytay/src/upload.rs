@@ -92,6 +92,10 @@ pub async fn upload_with_uploader<U: ArtifactUploader>(
     job.transition(ArtifactState::Uploading)
         .map_err(|e| UploadError::Permanent(e.to_string()))?;
     job.attempts += 1;
+    spool
+        .ledger()
+        .update(job.clone())
+        .map_err(|e| UploadError::Permanent(e.to_string()))?;
     let mut transferred = job.offset;
     let progress = |value: UploadProgress| {
         transferred = value.transferred;

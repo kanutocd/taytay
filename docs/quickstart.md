@@ -55,11 +55,13 @@ sed -i 's#^token_file = .*#token_file = "/tmp/lunsaran.token"#' /tmp/taytay.toml
 
 cargo run -- --check-config /tmp/taytay.toml
 cargo run -- --status /tmp/taytay.toml
+cargo run -- /tmp/taytay.toml
 ```
 
 `--check-config` validates the file without starting transfer. `--status`
 reports JSON readiness and spool counts without exposing credentials or media
-metadata.
+metadata. Passing the configuration path without a command starts the bounded
+upload workers and drains pending jobs through Lunsaran and Brutus.
 
 The reference binary also supports `--pause ARTIFACT_ID CONFIG` and
 `--resume ARTIFACT_ID CONFIG` for durable upload control.

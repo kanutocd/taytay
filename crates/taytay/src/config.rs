@@ -2,6 +2,7 @@
 
 use serde::Deserialize;
 use std::{fs, path::Path};
+use uuid::Uuid;
 
 use crate::TaytayError;
 
@@ -101,6 +102,10 @@ impl Config {
             ));
         }
         validate_base_url(&self.lunsaran_base_url)?;
+        Uuid::parse_str(&self.organization_id)
+            .map_err(|_| TaytayError::Configuration("organization_id must be a UUID".into()))?;
+        Uuid::parse_str(&self.project_id)
+            .map_err(|_| TaytayError::Configuration("project_id must be a UUID".into()))?;
         Ok(())
     }
 }
@@ -131,8 +136,8 @@ mod tests {
             quota_bytes: 1,
             upload_workers: 0,
             lunsaran_base_url: "https://lunsaran".into(),
-            organization_id: "o".into(),
-            project_id: "p".into(),
+            organization_id: "00000000-0000-0000-0000-000000000001".into(),
+            project_id: "00000000-0000-0000-0000-000000000002".into(),
             token_file: "token".into(),
         };
         assert!(c.validate().is_err());
@@ -145,8 +150,8 @@ mod tests {
             quota_bytes: 1,
             upload_workers: 1,
             lunsaran_base_url: "https://user:pass@example.test".into(),
-            organization_id: "o".into(),
-            project_id: "p".into(),
+            organization_id: "00000000-0000-0000-0000-000000000001".into(),
+            project_id: "00000000-0000-0000-0000-000000000002".into(),
             token_file: "token".into(),
         };
         assert!(c.validate().is_err());

@@ -1,16 +1,25 @@
-use lunsaran_taytay::{ArtifactId, config::Config, operations::HealthSnapshot, spool::Spool};
+use lunsaran_taytay::{
+    ArtifactId, config::Config, operations::HealthSnapshot, runtime, spool::Spool,
+};
 use std::{env, process::ExitCode};
 
-fn main() -> ExitCode {
+#[tokio::main]
+async fn main() -> ExitCode {
     let mut args = env::args().skip(1);
-    let command = args.next().unwrap_or_else(|| "--check-config".into());
+    let requested = args.next().unwrap_or_else(|| "--check-config".into());
     let first_argument = args.next().unwrap_or_else(|| "taytay.toml".into());
-    let (path, artifact_id) = match command.as_str() {
-        "--pause" | "--resume" => (
-            args.next().unwrap_or_else(|| "taytay.toml".into()),
-            Some(first_argument),
-        ),
-        _ => (first_argument, None),
+    let (command, path, artifact_id) = if requested.starts_with("--") {
+        if requested == "--pause" || requested == "--resume" {
+            (
+                requested,
+                args.next().unwrap_or_else(|| "taytay.toml".into()),
+                Some(first_argument),
+            )
+        } else {
+            (requested, first_argument, None)
+        }
+    } else {
+        ("--run".into(), requested, None)
     };
     match Config::load(&path) {
         Ok(config) if command == "--check-config" => {
@@ -20,6 +29,19 @@ fn main() -> ExitCode {
             );
             ExitCode::SUCCESS
         }
+        Ok(config) if command == "--run" => match runtime::run(&config).await {
+            Ok(report) => {
+                println!(
+                    "{{\"completed_jobs\":{},\"failed_jobs\":{}}}",
+                    report.completed, report.failed
+                );
+                ExitCode::SUCCESS
+            }
+            Err(error) => {
+                eprintln!("taytay: {error}");
+                ExitCode::FAILURE
+            }
+        },
         Ok(config) if command == "--status" => {
             match Spool::open(&config.spool_dir, config.quota_bytes)
                 .and_then(|spool| HealthSnapshot::from_spool(&spool, config.quota_bytes))
@@ -69,7 +91,7 @@ fn main() -> ExitCode {
         }
         Ok(_) => {
             eprintln!(
-                "taytay: unknown command {command}; use --check-config, --status, --pause, or --resume"
+                "taytay: unknown command {command}; use CONFIG, --check-config, --status, --pause, or --resume"
             );
             ExitCode::FAILURE
         }

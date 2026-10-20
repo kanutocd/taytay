@@ -2,7 +2,7 @@ spool_dir = "/var/lib/taytay/spool"
 quota_bytes = 10737418240
 upload_workers = 2
 lunsaran_base_url = "https://lunsaran.example.invalid"
-organization_id = "org-example"
-project_id = "project-example"
+organization_id = "00000000-0000-0000-0000-000000000001"
+project_id = "00000000-0000-0000-0000-000000000002"
 token_file = "/etc/taytay/lunsaran.token"
 

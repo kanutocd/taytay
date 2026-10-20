@@ -55,6 +55,8 @@ pub mod protocol;
 pub mod resume;
 /// Bounded retry and backpressure primitives.
 pub mod retry;
+/// Executable pending-upload runtime used by the reference binary.
+pub mod runtime;
 /// Cancellation-aware bounded job scheduling.
 pub mod scheduler;
 /// Atomic artifact publication and checksum verification.
