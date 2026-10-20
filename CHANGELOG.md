@@ -4,6 +4,8 @@
 
 - First public Taytay crate release: durable Linux edge ingestion and
   resumable Lunsaran uploads.
+- Align the Entregar integration with the published `lunsaran-entregar` and
+  `lunsaran-entregar-mock` 0.1.3 releases.
 - Renamed the publishable crate from `taytay` to `lunsaran-taytay`; the
   installed service and `taytay` binary name remain unchanged.
 
@@ -22,10 +24,10 @@
 - Made ONVIF fixture parsing namespace-prefix tolerant and expanded the local
   acceptance command description to include expiry and checksum coverage.
 
-- Adopt the published `lunsaran-entregar` and `lunsaran-entregar-mock` 0.1.1
+- Adopt the published `lunsaran-entregar` and `lunsaran-entregar-mock` 0.1.3
   releases, including checksum propagation, protocol validation, retries,
   atomic resume state, and in-flight cancellation.
-- Update upload and durability documentation for the 0.1.1 client boundary.
+- Update upload and durability documentation for the 0.1.3 client boundary.
 - Added durable `Spool::pause` and `Spool::resume` controls; paused jobs are
   persisted and excluded from pending scheduling until resumed.
 - Added acceptance coverage proving the artifact checksum is sent to the

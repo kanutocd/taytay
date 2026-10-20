@@ -62,6 +62,6 @@ ID instead.
 ## Checksum boundary
 
 Taytay verifies the local SHA-256 before transfer and propagates it through the
-published `lunsaran-entregar` 0.1.1 session request. The Lunsaran service must
+published `lunsaran-entregar` 0.1.3 session request. The Lunsaran service must
 still enforce and report the checksum according to its deployed upload-session
 contract; verify that behavior in the hosted acceptance environment.

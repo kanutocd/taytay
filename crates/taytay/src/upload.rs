@@ -214,6 +214,8 @@ impl ArtifactUploader for EntregarUploader {
                         idempotency_key: Some(job.artifact.id.0.clone()),
                         checksum_sha256: artifact.checksum_sha256.clone(),
                         resume_state: Some(state_path.clone()),
+                        upload_mode: None,
+                        maximum_size: None,
                     },
                     |value| {
                         progress(UploadProgress {
@@ -508,7 +510,7 @@ mod tests {
             .unwrap();
         let client = lunsaran_entregar::Client::new(lunsaran_entregar::ClientConfig::new(
             server.base_url(),
-            "device-token",
+            "test-token",
         ))
         .unwrap();
         let uploader = EntregarUploader::new(client, Uuid::nil(), root.join("resume"));
@@ -544,7 +546,7 @@ mod tests {
                 serde_json::json!({}),
             )
             .unwrap();
-        let mut config = lunsaran_entregar::ClientConfig::new(server.base_url(), "device-token");
+        let mut config = lunsaran_entregar::ClientConfig::new(server.base_url(), "test-token");
         config.retry_attempts = 1;
         let client = lunsaran_entregar::Client::new(config).unwrap();
         let uploader = EntregarUploader::new(client, Uuid::nil(), root.join("resume"));
@@ -610,7 +612,7 @@ mod tests {
             .unwrap();
         let client = lunsaran_entregar::Client::new(lunsaran_entregar::ClientConfig::new(
             server.base_url(),
-            "device-token",
+            "test-token",
         ))
         .unwrap();
         let uploader = EntregarUploader::new(client, Uuid::nil(), root.join("resume"));

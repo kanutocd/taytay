@@ -49,7 +49,7 @@ make room. Cleanup should run only after completion and an explicit retention
 policy.
 
 Cancellation stops new work at the scheduler boundary and can cancel an
-in-flight upload through the `lunsaran-entregar` 0.1.1 cancellation token.
+in-flight upload through the `lunsaran-entregar` 0.1.3 cancellation token.
 The library also exposes `Spool::pause` and `Spool::resume`: paused jobs are
 persisted in the ledger, excluded from pending work, and returned to
 `Published` when resumed. Cancellation is appropriate for stopping an
