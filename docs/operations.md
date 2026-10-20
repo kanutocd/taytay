@@ -113,3 +113,5 @@ completion and redacted output, and removes its stack and temporary files on
 exit. Set `TAYTAY_KEEP_CROSS_REPO_STACK=1` only when inspecting a failed
 environment manually. If the supplied API and Brutus stack is already running,
 set `TAYTAY_USE_EXISTING_STACK=1`; this mode never stops containers.
+On failure, the harness preserves its redacted output and ledger under `/tmp`
+for diagnosis; remove that directory after inspection.

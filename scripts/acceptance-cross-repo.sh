@@ -55,12 +55,18 @@ artifact_file="$spool_dir/cross-repo.artifact"
 output_file="$spool_dir/taytay.out"
 
 cleanup() {
+  exit_status=$?
   set +e
   if [[ "$use_existing_stack" != "1" && "${TAYTAY_KEEP_CROSS_REPO_STACK:-0}" != "1" ]]; then
     docker compose -p "$compose_project" "${lunsaran_compose_args[@]}" down --volumes --remove-orphans >/dev/null 2>&1
     docker compose -p "$compose_project" -f "$TAYTAY_BRUTUS_COMPOSE_FILE" down --volumes --remove-orphans >/dev/null 2>&1
   fi
-  rm -rf "$spool_dir"
+  if [[ "$exit_status" -ne 0 || "${TAYTAY_KEEP_CROSS_REPO_ARTIFACTS:-0}" == "1" ]]; then
+    echo "cross-repository acceptance artifacts preserved at $spool_dir" >&2
+  else
+    rm -rf "$spool_dir"
+  fi
+  exit "$exit_status"
 }
 trap cleanup EXIT INT TERM
 
@@ -87,7 +93,11 @@ printf '%s\n' \
 printf '%s\n' "{\"artifact\":{\"id\":\"$artifact_id\",\"source\":\"cross-repo\",\"path\":\"$artifact_path\",\"media_type\":\"text/plain\",\"captured_at\":null,\"metadata\":{},\"size\":$artifact_size,\"checksum_sha256\":\"$checksum\"},\"state\":\"Published\",\"attempts\":0,\"server_url\":null,\"offset\":0,\"last_error\":null}" >"$spool_dir/ledger.jsonl"
 
 cargo build -p lunsaran-taytay --bin taytay --quiet
-target/debug/taytay "$config_file" >"$output_file" 2>&1
+if ! target/debug/taytay "$config_file" >"$output_file" 2>&1; then
+  echo "taytay runtime failed; redacted output follows:" >&2
+  sed -E 's/(Bearer )[A-Za-z0-9._~+\/-]+/\1[REDACTED]/g' "$output_file" >&2
+  exit 1
+fi
 
 rg -q '"completed_jobs":1,"failed_jobs":0' "$output_file" || {
   echo "cross-repository upload did not report completion" >&2

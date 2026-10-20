@@ -14,6 +14,8 @@
   Taytay, Lunsaran, and Brutus upload path with credential-safe assertions.
 - Allow the cross-repository harness to target an already-running provisioned
   stack without taking ownership of its containers.
+- Preserve redacted cross-repository failure artifacts so contract-stage
+  failures can be diagnosed without exposing credentials.
 - Renamed the publishable crate from `taytay` to `lunsaran-taytay`; the
   installed service and `taytay` binary name remain unchanged.
 
