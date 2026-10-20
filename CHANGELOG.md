@@ -16,6 +16,8 @@
   stack without taking ownership of its containers.
 - Preserve redacted cross-repository failure artifacts so contract-stage
   failures can be diagnosed without exposing credentials.
+- Complete live cross-repository coverage for idempotency replay, durable
+  restart recovery, project scoping, and invalid/expired/revoked credentials.
 - Renamed the publishable crate from `taytay` to `lunsaran-taytay`; the
   installed service and `taytay` binary name remain unchanged.
 

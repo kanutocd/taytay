@@ -36,6 +36,11 @@ credential. Run `scripts/acceptance-cross-repo.sh` with the documented
 `TAYTAY_CROSS_REPO=1` environment when that disposable environment is
 available.
 
+When the live gate is provisioned, its acceptance matrix includes session
+authorization, TUS completion, checksum propagation, durable restart recovery,
+idempotency replay, project scoping, invalid credentials, and expired/revoked
+credential rejection.
+
 When adding an adapter, test at least:
 
 - incomplete-file suppression;

@@ -10,7 +10,7 @@ if [[ "${TAYTAY_CROSS_REPO:-0}" != "1" ]]; then
   exit 0
 fi
 
-for command in cargo docker sha256sum stat awk sed rg; do
+for command in cargo curl docker jq psql sha256sum stat awk sed rg; do
   command -v "$command" >/dev/null 2>&1 || {
     echo "cross-repository acceptance requires: $command" >&2
     exit 1
@@ -53,10 +53,24 @@ spool_dir="$(mktemp -d "${TMPDIR:-/tmp}/taytay-cross-repo.XXXXXX")"
 config_file="$spool_dir/taytay.toml"
 artifact_file="$spool_dir/cross-repo.artifact"
 output_file="$spool_dir/taytay.out"
+recovery_spool="$spool_dir/recovery"
+recovery_artifact="$recovery_spool/recovery.artifact"
+recovery_config="$recovery_spool/taytay.toml"
+expired_token="crossrepo-expired-${RANDOM}-${RANDOM}.token"
+revoked_token="crossrepo-revoked-${RANDOM}-${RANDOM}.token"
+fixture_name="taytay-cross-repo-${RANDOM}-${RANDOM}"
+expired_token_file="$spool_dir/expired.token"
+revoked_token_file="$spool_dir/revoked.token"
+api_response="$spool_dir/api-response.json"
+postgres_container=""
+fixture_cleanup=""
 
 cleanup() {
   exit_status=$?
   set +e
+  if [[ -n "$fixture_cleanup" && -n "$postgres_container" ]]; then
+    docker exec "$postgres_container" psql -U lunsaran -d lunsaran_development -c "$fixture_cleanup" >/dev/null 2>&1
+  fi
   if [[ "$use_existing_stack" != "1" && "${TAYTAY_KEEP_CROSS_REPO_STACK:-0}" != "1" ]]; then
     docker compose -p "$compose_project" "${lunsaran_compose_args[@]}" down --volumes --remove-orphans >/dev/null 2>&1
     docker compose -p "$compose_project" -f "$TAYTAY_BRUTUS_COMPOSE_FILE" down --volumes --remove-orphans >/dev/null 2>&1
@@ -116,4 +130,80 @@ if rg -n -F -- "$(<"$TAYTAY_LUNSARAN_TOKEN_FILE")" "$output_file"; then
   exit 1
 fi
 
-echo "cross-repository acceptance passed: session authorization, TUS completion, checksum-bound artifact, durable completion, and output redaction"
+request_session() {
+  local token="$1"
+  local project_id="$2"
+  local idempotency_key="$3"
+  local response_path="$4"
+  curl -sS --max-time 15 -o "$response_path" -w '%{http_code}' \
+    -X POST "$TAYTAY_LUNSARAN_BASE_URL/v1/upload-sessions" \
+    -H "Authorization: Bearer $token" \
+    -H 'Content-Type: application/json' \
+    -H "Idempotency-Key: $idempotency_key" \
+    --data "{\"project_id\":\"$project_id\",\"size\":32,\"filename\":\"cross-repo.artifact\",\"content_type\":\"text/plain\",\"checksum\":\"$checksum\",\"client_kind\":\"entregar\"}"
+}
+
+valid_token="$(<"$TAYTAY_LUNSARAN_TOKEN_FILE")"
+idempotency_key="taytay-cross-repo-idempotency-$(date +%s%N)"
+first_code="$(request_session "$valid_token" "$TAYTAY_PROJECT_ID" "$idempotency_key" "$api_response")"
+first_id="$(jq -r '.id // empty' "$api_response")"
+second_code="$(request_session "$valid_token" "$TAYTAY_PROJECT_ID" "$idempotency_key" "$api_response")"
+second_id="$(jq -r '.id // empty' "$api_response")"
+[[ "$first_code" =~ ^2[0-9][0-9]$ && "$second_code" =~ ^2[0-9][0-9]$ && -n "$first_id" && "$first_id" == "$second_id" ]] || {
+  echo "idempotency replay did not reuse the upload session" >&2
+  exit 1
+}
+
+mkdir -p "$recovery_spool/resume"
+printf '%s\n' 'taytay-cross-repository-restart-payload' >"$recovery_artifact"
+recovery_checksum="$(sha256sum "$recovery_artifact" | awk '{print $1}')"
+recovery_size="$(stat -c '%s' "$recovery_artifact")"
+recovery_path="$(printf '%s' "$recovery_artifact" | sed 's/\\/\\\\/g; s/"/\\"/g')"
+printf '%s\n' \
+  "spool_dir = \"$recovery_spool\"" \
+  'quota_bytes = 1048576' \
+  'upload_workers = 1' \
+  "lunsaran_base_url = \"$TAYTAY_LUNSARAN_BASE_URL\"" \
+  "organization_id = \"$TAYTAY_ORGANIZATION_ID\"" \
+  "project_id = \"$TAYTAY_PROJECT_ID\"" \
+  "token_file = \"$TAYTAY_LUNSARAN_TOKEN_FILE\"" >"$recovery_config"
+printf '%s\n' "{\"artifact\":{\"id\":\"cross-repo-restart-$(date +%s%N)\",\"source\":\"cross-repo\",\"path\":\"$recovery_path\",\"media_type\":\"text/plain\",\"captured_at\":null,\"metadata\":{},\"size\":$recovery_size,\"checksum_sha256\":\"$recovery_checksum\"},\"state\":\"Uploading\",\"attempts\":1,\"server_url\":null,\"offset\":0,\"last_error\":null}" >"$recovery_spool/ledger.jsonl"
+target/debug/taytay "$recovery_config" >"$spool_dir/recovery.out" 2>&1
+rg -q '"completed_jobs":1,"failed_jobs":0' "$spool_dir/recovery.out"
+rg -q '"state":"Completed"' "$recovery_spool/ledger.jsonl"
+
+invalid_token="crossrepo-invalid-${RANDOM}-${RANDOM}.token"
+invalid_code="$(request_session "$invalid_token" "$TAYTAY_PROJECT_ID" "taytay-cross-repo-invalid-$(date +%s%N)" "$api_response")"
+[[ "$invalid_code" == "401" || "$invalid_code" == "403" ]] || {
+  echo "invalid credential was not rejected safely" >&2
+  exit 1
+}
+
+ineligible_project="00000000-0000-0000-0000-000000000099"
+ineligible_code="$(request_session "$valid_token" "$ineligible_project" "taytay-cross-repo-ineligible-$(date +%s%N)" "$api_response")"
+[[ "$ineligible_code" == "403" || "$ineligible_code" == "404" ]] || {
+  echo "ineligible project was not rejected safely" >&2
+  exit 1
+}
+
+if [[ "$use_existing_stack" == "1" ]]; then
+  postgres_container="${TAYTAY_POSTGRES_CONTAINER:-infra-postgres-1}"
+  device_id="$(docker exec "$postgres_container" psql -U lunsaran -d lunsaran_development -Atc "SELECT device_id::text FROM api_keys WHERE organization_id = '$TAYTAY_ORGANIZATION_ID' AND revoked_at IS NULL AND device_id IS NOT NULL ORDER BY created_at DESC LIMIT 1")"
+  [[ "$device_id" =~ ^[0-9a-f-]{36}$ ]] || {
+    echo "could not resolve a device for disposable credential fixtures" >&2
+    exit 1
+  }
+  printf '%s\n' "$expired_token" >"$expired_token_file"
+  printf '%s\n' "$revoked_token" >"$revoked_token_file"
+  chmod 600 "$expired_token_file" "$revoked_token_file"
+  docker exec "$postgres_container" psql -U lunsaran -d lunsaran_development -v ON_ERROR_STOP=1 -c \
+    "INSERT INTO api_keys (organization_id, device_id, name, key_hash, key_prefix, scopes, expires_at, revoked_at) VALUES ('$TAYTAY_ORGANIZATION_ID'::uuid, '$device_id'::uuid, '$fixture_name-expired', digest('$expired_token','sha256'), split_part('$expired_token','.',1), ARRAY['upload_sessions:create'], now() - interval '1 minute', NULL), ('$TAYTAY_ORGANIZATION_ID'::uuid, '$device_id'::uuid, '$fixture_name-revoked', digest('$revoked_token','sha256'), split_part('$revoked_token','.',1), ARRAY['upload_sessions:create'], now() + interval '1 hour', now())" >/dev/null
+  fixture_cleanup="DELETE FROM api_keys WHERE organization_id = '$TAYTAY_ORGANIZATION_ID' AND name IN ('$fixture_name-expired', '$fixture_name-revoked')"
+  expired_code="$(request_session "$expired_token" "$TAYTAY_PROJECT_ID" "taytay-cross-repo-expired-$(date +%s%N)" "$api_response")"
+  revoked_code="$(request_session "$revoked_token" "$TAYTAY_PROJECT_ID" "taytay-cross-repo-revoked-$(date +%s%N)" "$api_response")"
+  [[ "$expired_code" == "401" || "$expired_code" == "403" ]] || { echo "expired credential was not rejected safely" >&2; exit 1; }
+  [[ "$revoked_code" == "401" || "$revoked_code" == "403" ]] || { echo "revoked credential was not rejected safely" >&2; exit 1; }
+  docker exec "$postgres_container" psql -U lunsaran -d lunsaran_development -v ON_ERROR_STOP=1 -c "$fixture_cleanup" >/dev/null
+fi
+
+echo "cross-repository acceptance passed: session authorization, TUS completion, checksum-bound artifact, durable completion, idempotency replay, restart recovery, invalid/project authorization, and credential rejection"

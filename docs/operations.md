@@ -115,3 +115,7 @@ environment manually. If the supplied API and Brutus stack is already running,
 set `TAYTAY_USE_EXISTING_STACK=1`; this mode never stops containers.
 On failure, the harness preserves its redacted output and ledger under `/tmp`
 for diagnosis; remove that directory after inspection.
+
+The live gate also replays an idempotency key, resumes a durable `Uploading`
+ledger job, and verifies safe rejection of invalid, expired, revoked, and
+project-ineligible credentials.
