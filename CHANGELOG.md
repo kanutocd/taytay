@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.2.0 - 2026-10-20
+
+- Remove the legacy protocol upload model and make the executable Entregar
+  runtime the supported upload path.
+- Add durable upload execution with protected device credentials, retry and
+  resume behavior, checksum propagation, and bounded workers.
+- Complete live cross-repository acceptance coverage for authorization,
+  idempotency, restart recovery, project scoping, and credential rejection.
+- Align the publishable crate with the registry-published
+  `lunsaran-entregar` and `lunsaran-entregar-mock` 0.1.3 releases.
+
 ## 0.1.0 - 2026-09-29
 
 - First public Taytay crate release: durable Linux edge ingestion and
