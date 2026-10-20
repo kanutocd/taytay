@@ -49,8 +49,6 @@ pub mod metrics;
 pub mod model;
 /// Retention, health, counters, and failure persistence.
 pub mod operations;
-/// Lunsaran session and TUS protocol contracts.
-pub mod protocol;
 /// Atomic TUS resume-state persistence.
 pub mod resume;
 /// Bounded retry and backpressure primitives.

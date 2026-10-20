@@ -65,6 +65,12 @@ The `EntregarUploader` implementation is the supported public-client path for
 Lunsaran. It supplies a stable job-derived idempotency key and keeps resume
 state under the configured edge spool.
 
+`ArtifactUploader` is the supported transport extension point. Taytay no
+longer exposes the former synchronous `LunsaranClient`/`TusClient` protocol
+model; integrations should use `EntregarUploader` or implement
+`ArtifactUploader` directly so upload-session authorization, checksums, TUS
+resume behavior, and error classification remain behind one boundary.
+
 ## Composition rule
 
 Keep policy above the traits. A source adapter should not know TUS offsets. An

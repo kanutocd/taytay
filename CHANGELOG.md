@@ -8,6 +8,8 @@
   `lunsaran-entregar-mock` 0.1.3 releases.
 - Wire the reference binary to load protected device credentials, recover the
   durable spool, and drain pending uploads through bounded Entregar workers.
+- Remove the unused legacy `LunsaranClient`/`TusClient` protocol model and make
+  `ArtifactUploader` the sole custom transport boundary.
 - Renamed the publishable crate from `taytay` to `lunsaran-taytay`; the
   installed service and `taytay` binary name remain unchanged.
 
