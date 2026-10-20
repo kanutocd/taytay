@@ -81,6 +81,7 @@
   max-height: 70vh;
   overflow: hidden;
   cursor: grab;
+  touch-action: none;
 }
 
 .mermaid-panzoom__viewport.is-dragging {

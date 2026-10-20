@@ -9,6 +9,18 @@
   var MAX_SCALE = 4;
   var SCALE_STEP = 0.2;
   var ENHANCED = "data-mermaid-panzoom-ready";
+  var WAITING = "data-mermaid-panzoom-waiting";
+
+  // Zensical renders Mermaid diagrams into a closed shadow root. Open only
+  // Mermaid hosts so the SVG can be used as the pan/zoom transform target.
+  var attachShadow = Element.prototype.attachShadow;
+  Element.prototype.attachShadow = function (init) {
+    if (init && this.classList && this.classList.contains("mermaid") && init.mode === "closed") {
+      init = Object.assign({}, init, { mode: "open" });
+    }
+
+    return attachShadow.call(this, init);
+  };
 
   function clamp(value, minimum, maximum) {
     return Math.min(Math.max(value, minimum), maximum);
@@ -23,9 +35,36 @@
     state.scale = scale;
   }
 
+  function getDiagramOrigin(state, viewport) {
+    var viewportBounds = viewport.getBoundingClientRect();
+    var diagramBounds = state.diagram.getBoundingClientRect();
+
+    return {
+      x: diagramBounds.left - viewportBounds.left - state.x,
+      y: diagramBounds.top - viewportBounds.top - state.y
+    };
+  }
+
+  function zoomAt(state, viewport, nextScale, clientX, clientY) {
+    if (!state.diagram) {
+      return;
+    }
+
+    var viewportBounds = viewport.getBoundingClientRect();
+    var diagramOrigin = getDiagramOrigin(state, viewport);
+    var originX = clientX - viewportBounds.left - diagramOrigin.x;
+    var originY = clientY - viewportBounds.top - diagramOrigin.y;
+    updateScale(state, nextScale, originX, originY);
+  }
+
   function render(state) {
-    state.diagram.style.transform =
-      "translate3d(" + state.x + "px, " + state.y + "px, 0) scale(" + state.scale + ")";
+    if (state.diagram) {
+      state.diagram.style.setProperty(
+        "transform",
+        "translate(" + state.x + "px, " + state.y + "px) scale(" + state.scale + ")",
+        "important"
+      );
+    }
     var zoomPercentage = Math.round(state.scale * 100);
     state.zoom.textContent = zoomPercentage + "%";
     state.zoomOut.disabled = state.scale <= MIN_SCALE;
@@ -33,17 +72,82 @@
     state.reset.disabled = zoomPercentage === 100;
   }
 
-  function enhance(diagram) {
-    if (diagram.tagName === "PRE" || diagram.hasAttribute(ENHANCED)) {
+  function findSvg(mermaid) {
+    var roots = [mermaid];
+
+    while (roots.length > 0) {
+      var root = roots.shift();
+      if (root.shadowRoot) {
+        roots.push(root.shadowRoot);
+      }
+
+      var svg = root.querySelector && root.querySelector("svg");
+      if (svg) {
+        return svg;
+      }
+
+      if (!root.querySelectorAll) {
+        continue;
+      }
+
+      root.querySelectorAll("*").forEach(function (element) {
+        if (element.shadowRoot) {
+          roots.push(element.shadowRoot);
+        }
+      });
+    }
+
+    return null;
+  }
+
+  function waitForSvg(mermaid, onSvg) {
+    if (mermaid.hasAttribute(WAITING)) {
       return;
     }
 
-    var originalParent = diagram.parentNode;
+    mermaid.setAttribute(WAITING, "");
+    var attempts = 0;
+    var finish = function () {
+      var svg = findSvg(mermaid);
+      if (!svg) {
+        return;
+      }
+
+      window.clearInterval(retry);
+      if (observer) {
+        observer.disconnect();
+      }
+      mermaid.removeAttribute(WAITING);
+      onSvg(svg);
+    };
+    var observer = mermaid.shadowRoot ? new MutationObserver(finish) : null;
+    var retry = window.setInterval(function () {
+      finish();
+      attempts += 1;
+      if (attempts >= 40) {
+        window.clearInterval(retry);
+        mermaid.removeAttribute(WAITING);
+        if (observer) {
+          observer.disconnect();
+        }
+      }
+    }, 250);
+    if (observer) {
+      observer.observe(mermaid.shadowRoot, { childList: true, subtree: true });
+    }
+  }
+
+  function enhance(mermaid) {
+    if (mermaid.tagName === "PRE" || mermaid.hasAttribute(ENHANCED)) {
+      return;
+    }
+
+    var originalParent = mermaid.parentNode;
     if (!originalParent) {
       return;
     }
 
-    diagram.setAttribute(ENHANCED, "");
+    mermaid.setAttribute(ENHANCED, "");
 
     var viewport = document.createElement("div");
     viewport.className = "mermaid-panzoom__viewport";
@@ -76,7 +180,7 @@
     }
 
     var state = {
-      diagram: diagram,
+      diagram: null,
       scale: 1,
       x: 0,
       y: 0,
@@ -92,7 +196,7 @@
     var zoomHint = "Use the mouse wheel or your touchpad to zoom in or out";
 
     function updateCanvasHint(event) {
-      if (state.dragging) {
+      if (state.dragging || !state.diagram) {
         return;
       }
 
@@ -103,7 +207,13 @@
     }
 
     state.zoomOut = button("Zoom out", "−", "mermaid-panzoom__zoom-out", function () {
-      updateScale(state, state.scale - SCALE_STEP, viewport.clientWidth / 2, viewport.clientHeight / 2);
+      zoomAt(
+        state,
+        viewport,
+        state.scale - SCALE_STEP,
+        viewport.getBoundingClientRect().left + viewport.clientWidth / 2,
+        viewport.getBoundingClientRect().top + viewport.clientHeight / 2
+      );
       render(state);
     });
 
@@ -112,11 +222,21 @@
     state.zoom.setAttribute("aria-live", "polite");
 
     state.zoomIn = button("Zoom in", "+", "mermaid-panzoom__zoom-in", function () {
-      updateScale(state, state.scale + SCALE_STEP, viewport.clientWidth / 2, viewport.clientHeight / 2);
+      zoomAt(
+        state,
+        viewport,
+        state.scale + SCALE_STEP,
+        viewport.getBoundingClientRect().left + viewport.clientWidth / 2,
+        viewport.getBoundingClientRect().top + viewport.clientHeight / 2
+      );
       render(state);
     });
 
     function resetAndCenter() {
+      if (!state.diagram) {
+        return;
+      }
+
       var transition = state.diagram.style.transition;
       state.diagram.style.transition = "none";
       state.scale = 1;
@@ -141,6 +261,19 @@
     });
     state.reset = reset;
 
+    function attachSvg(svg) {
+      if (state.diagram === svg) {
+        return;
+      }
+
+      state.diagram = svg;
+      state.diagram.style.transformBox = "fill-box";
+      state.diagram.style.transformOrigin = "0 0";
+      state.diagram.style.transition = "transform 120ms ease-out";
+      state.diagram.setAttribute("draggable", "false");
+      resetAndCenter();
+    }
+
     var fullscreen = button("Open diagram fullscreen", "⛶", "mermaid-panzoom__fullscreen", function () {
       if (document.fullscreenElement === wrapper) {
         if (document.exitFullscreen) {
@@ -162,30 +295,42 @@
 
     toolbar.append(state.zoomOut, state.zoom, state.zoomIn, reset, fullscreen);
     wrapper.append(toolbar, viewport);
-    originalParent.replaceChild(wrapper, diagram);
-    viewport.appendChild(diagram);
+    originalParent.replaceChild(wrapper, mermaid);
+    viewport.appendChild(mermaid);
     document.addEventListener("fullscreenchange", function () {
       updateFullscreenControl();
     });
     updateFullscreenControl();
 
-    state.diagram.style.transformOrigin = "0 0";
-    state.diagram.style.transition = "transform 120ms ease-out";
-    resetAndCenter();
+    var svg = findSvg(mermaid);
+    if (svg) {
+      attachSvg(svg);
+    } else {
+      waitForSvg(mermaid, attachSvg);
+    }
 
     viewport.addEventListener("wheel", function (event) {
+      if (!state.diagram) {
+        return;
+      }
+
       event.preventDefault();
-      var bounds = viewport.getBoundingClientRect();
       var factor = event.deltaY < 0 ? 1 + SCALE_STEP : 1 - SCALE_STEP;
-      updateScale(state, state.scale * factor, event.clientX - bounds.left, event.clientY - bounds.top);
+      zoomAt(state, viewport, state.scale * factor, event.clientX, event.clientY);
       render(state);
     }, { passive: false });
 
     viewport.addEventListener("pointerdown", function (event) {
-      if (event.button !== 0 || event.target.closest("button")) {
+      var path = event.composedPath();
+      var overControl = path.some(function (target) {
+        return target instanceof Element && target.closest("button");
+      });
+
+      if (!state.diagram || event.button !== 0 || overControl) {
         return;
       }
 
+      event.preventDefault();
       state.pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
       viewport.setPointerCapture(event.pointerId);
 
@@ -222,11 +367,14 @@
           pinchPoints[0].x - pinchPoints[1].x,
           pinchPoints[0].y - pinchPoints[1].y
         );
-        var bounds = viewport.getBoundingClientRect();
-        var centerX = (pinchPoints[0].x + pinchPoints[1].x) / 2 - bounds.left;
-        var centerY = (pinchPoints[0].y + pinchPoints[1].y) / 2 - bounds.top;
         if (state.pinchDistance > 0) {
-          updateScale(state, state.pinchScale * pinchDistance / state.pinchDistance, centerX, centerY);
+          zoomAt(
+            state,
+            viewport,
+            state.pinchScale * pinchDistance / state.pinchDistance,
+            (pinchPoints[0].x + pinchPoints[1].x) / 2,
+            (pinchPoints[0].y + pinchPoints[1].y) / 2
+          );
         }
         render(state);
         return;
@@ -280,8 +428,21 @@
     document.querySelectorAll(".mermaid:not([" + ENHANCED + "])").forEach(enhance);
   }
 
+  function scanAfterMermaidRenders() {
+    var attempts = 0;
+    var retry = window.setInterval(function () {
+      scan();
+      attempts += 1;
+
+      if (attempts >= 40 || !document.querySelector(".mermaid:not([" + ENHANCED + "])")) {
+        window.clearInterval(retry);
+      }
+    }, 250);
+  }
+
   function start() {
     scan();
+    scanAfterMermaidRenders();
     new MutationObserver(scan).observe(document.body, { childList: true, subtree: true });
   }
 

@@ -20,8 +20,8 @@ nav = [
   { "Development" = "development.md" },
 ]
 
-extra_javascript = ["javascripts/mermaid-panzoom.js"]
-extra_css = ["stylesheets/mermaid-panzoom.css"]
+extra_javascript = ["javascripts/mermaid.mjs","javascripts/mermaid-panzoom.js"]
+extra_css = ["stylesheets/layout.css","stylesheets/mermaid-panzoom.css"]
 
 [project.theme]
 variant = "classic"
@@ -62,3 +62,21 @@ pymdownx.superfences.custom_fences = [
   { name = "mermaid", class = "mermaid", format = "pymdownx.superfences.fence_code_format" },
 ]
 pymdownx.tabbed.alternate_style = true
+abbr = {}
+attr_list = {}
+def_list = {}
+footnotes = {}
+md_in_html = {}
+toc.permalink = true
+pymdownx.arithmatex.generic = true
+pymdownx.betterem = {}
+pymdownx.caret = {}
+pymdownx.details = {}
+pymdownx.emoji.emoji_generator = "zensical.extensions.emoji.to_svg"
+pymdownx.emoji.emoji_index = "zensical.extensions.emoji.twemoji"
+pymdownx.highlight.line_spans = "__span"
+pymdownx.highlight.pygments_lang_class = true
+pymdownx.keys = {}
+pymdownx.magiclink = {}
+pymdownx.mark = {}
+pymdownx.smartsymbols = {}
