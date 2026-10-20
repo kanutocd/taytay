@@ -79,7 +79,7 @@ printf 'taytay-cross-repository-payload\n' >"$artifact_file"
 checksum="$(sha256sum "$artifact_file" | awk '{print $1}')"
 artifact_size="$(stat -c '%s' "$artifact_file")"
 artifact_path="$(printf '%s' "$artifact_file" | sed 's/\\/\\\\/g; s/"/\\"/g')"
-artifact_id="cross-repo-acceptance"
+artifact_id="${TAYTAY_ACCEPTANCE_ARTIFACT_ID:-cross-repo-acceptance}"
 
 printf '%s\n' \
   "spool_dir = \"$spool_dir\"" \
