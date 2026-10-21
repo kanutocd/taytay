@@ -32,6 +32,11 @@ The reference uploader uses the published `lunsaran-entregar` client. Your
 application may instead implement `ArtifactUploader` for an internal transport
 or a different control-plane adapter.
 
+For a complete source application, see the
+[`usb-camera-taytay`](https://github.com/kanutocd/usb-camera-taytay) reference
+implementation. It demonstrates the same integration boundary with filesystem
+ingestion and a pure Rust V4L2 USB-camera capture path.
+
 ## Publish an artifact locally
 
 `Spool::publish` writes the bytes to a temporary file, syncs them, atomically

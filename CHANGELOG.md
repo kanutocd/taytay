@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Highlight `usb-camera-taytay` as the public Linux Rust reference
+  implementation for filesystem and V4L2 USB-camera source integrations.
+
 ## 0.2.0 - 2026-10-20
 
 - Remove the legacy protocol upload model and make the executable Entregar
