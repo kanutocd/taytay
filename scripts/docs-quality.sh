@@ -17,12 +17,47 @@ python3 - <<'PY'
 from pathlib import Path
 import re
 import sys
+import tomllib
 
 root = Path("docs")
 paths = [Path("README.md"), Path("CONTRIBUTING.md"), Path("SECURITY.md")]
 paths.extend(sorted(root.rglob("*.md")))
 errors = []
 link_pattern = re.compile(r"!?\[[^]]*\]\(([^)]+)\)")
+
+with Path("zensical.toml").open("rb") as handle:
+    site_config = tomllib.load(handle)
+
+nav = site_config["project"]["nav"]
+
+def nav_paths(entries):
+    for entry in entries:
+        for value in entry.values():
+            if isinstance(value, str):
+                yield value
+            elif isinstance(value, list):
+                yield from nav_paths(value)
+
+for nav_path in nav_paths(nav):
+    path = root / nav_path
+    if not path.is_file():
+        errors.append(f"zensical.toml: navigation path does not exist: {nav_path}")
+
+for path in root.glob("*.md"):
+    if path.name != path.name.lower():
+        errors.append(f"{path}: root documentation filenames must be lowercase")
+
+package_config = tomllib.loads(
+    Path("crates/taytay/Cargo.toml").read_text(encoding="utf-8")
+)
+crate_version = package_config["package"]["version"]
+dependency_pattern = re.compile(r"lunsaran-taytay\s*=\s*\"([^\"]+)\"")
+for path in (Path("README.md"), Path("docs/quickstart.md")):
+    match = dependency_pattern.search(path.read_text(encoding="utf-8"))
+    if not match or match.group(1) != crate_version:
+        errors.append(
+            f"{path}: documented lunsaran-taytay version does not match {crate_version}"
+        )
 
 for path in paths:
     text = path.read_text(encoding="utf-8")

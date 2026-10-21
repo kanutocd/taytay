@@ -5,6 +5,9 @@
 - Highlight `usb-camera-taytay` as the public Linux Rust reference
   implementation for filesystem and V4L2 USB-camera source integrations, with
   direct links to its repository and GitHub Pages guide.
+- Add canonical compatibility and troubleshooting pages, remove duplicate
+  uppercase documentation copies, and make the documentation quality check
+  verify navigation paths and crate-version references.
 
 ## 0.2.0 - 2026-10-20
 

@@ -19,8 +19,10 @@ nav = [
   { "Durability and recovery" = "durability.md" },
   { "Uploads and TUS" = "uploads.md" },
   { "Source adapters" = "sources.md" },
+  { "Compatibility" = "compatibility.md" },
   { "Operations" = "operations.md" },
   { "Security" = "security.md" },
+  { "Troubleshooting" = "troubleshooting.md" },
   { "Development" = "development.md" },
 ]
 

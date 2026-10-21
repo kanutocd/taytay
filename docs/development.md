@@ -78,7 +78,9 @@ scripts/docs-quality.sh
 ```
 
 This builds the Zensical site and lints Markdown structure, fenced code blocks,
-trailing whitespace, and local links in one command.
+trailing whitespace, local links, navigation paths, root-page naming, and the
+documented crate version in one command. Run it whenever a public API, page,
+navigation entry, or release version changes.
 
 Keep examples aligned with the current public API. Private planning documents
 belong in the companion `taytay-saas` repository and should not be added to
