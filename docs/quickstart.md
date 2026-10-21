@@ -5,6 +5,18 @@ description: Add Taytay to a Rust edge integrator
 
 # Quick start
 
+Use this guide if you are integrating the `lunsaran-taytay` crate into a Rust
+Linux edge application. By the end, you will publish one local artifact into a
+durable spool and know which command starts the reference uploader.
+
+## Prerequisites
+
+- Rust 1.85 or later.
+- A persistent writable spool directory.
+- An organization ID, project ID, and protected Lunsaran device/workload
+  credential for a live upload.
+- The `lunsaran-taytay` crate version selected by your integration review.
+
 ## Add the crate
 
 The public workspace publishes the `lunsaran-taytay` crate as the reusable
@@ -29,15 +41,19 @@ job.
 ```rust
 use lunsaran_taytay::{ArtifactId, SourceId, spool::Spool};
 
-let spool = Spool::open("./var/taytay-spool", 10 * 1024 * 1024 * 1024)?;
-let job = spool.publish(
-    ArtifactId::new("camera-01-2026-09-29T12-00-00Z"),
-    SourceId::new("camera-01"),
-    "video/mp4".to_owned(),
-    encoded_segment,
-    Some("2026-09-29T12:00:00Z".to_owned()),
-    serde_json::json!({ "camera": "camera-01" }),
-)?;
+fn publish_example() -> Result<(), Box<dyn std::error::Error>> {
+    let spool = Spool::open("./var/taytay-spool", 10 * 1024 * 1024 * 1024)?;
+    let encoded_segment = b"synthetic media segment";
+    let _job = spool.publish(
+        ArtifactId::new("camera-01-2026-09-29T12-00-00Z"),
+        SourceId::new("camera-01"),
+        "video/mp4".to_owned(),
+        encoded_segment,
+        Some("2026-09-29T12:00:00Z".to_owned()),
+        serde_json::json!({ "camera": "camera-01" }),
+    )?;
+    Ok(())
+}
 ```
 
 Keep the returned `UploadJob` until the uploader reports completion. A source
@@ -63,6 +79,9 @@ cargo run -- /tmp/taytay.toml
 reports JSON readiness and spool counts without exposing credentials or media
 metadata. Passing the configuration path without a command starts the bounded
 upload workers and drains pending jobs through Lunsaran and Brutus.
+
+An empty spool reports zero pending jobs. A successful run prints a JSON report
+with `completed_jobs` and `failed_jobs`.
 
 The reference binary also supports `--pause ARTIFACT_ID CONFIG` and
 `--resume ARTIFACT_ID CONFIG` for durable upload control.

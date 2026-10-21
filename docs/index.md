@@ -9,6 +9,10 @@ Taytay is a Rust edge bridge for applications that capture or receive media on
 Linux and need to deliver it to Lunsaran reliably. It turns source output into
 durable, checksummed, resumable upload jobs.
 
+This documentation is for Rust integrators and operators who need to add
+Taytay to a Linux edge application, implement a source adapter, or operate the
+reference upload process.
+
 Taytay is intended for:
 
 - OEMs embedding Lunsaran uploads into cameras, gateways, and field systems.
@@ -24,21 +28,22 @@ owns the TUS data plane and provider execution.
 
 ## The name
 
-*Taytay* is a Hiligaynon word for “bridge”. The name reflects the crate’s role
+**_Taytay_** is a Hiligaynon word for “bridge”. The name reflects the crate’s role
 connecting edge sources and durable local state to the Lunsaran platform.
 
-```mermaid
-flowchart LR
-    source[Camera, NVR, file, drone, or LiDAR source]
-    adapter[Your SourceAdapter]
-    spool[Taytay durable spool]
-    uploader[Your ArtifactUploader<br/>or EntregarUploader]
-    lunsaran[Lunsaran control plane]
-    brutus[Brutus TUS data plane]
-    source --> adapter --> spool --> uploader
-    uploader -->|session and authorization| lunsaran
-    uploader -->|resumable bytes| brutus
-```
+
+## Architecture Overview
+
+![Taytay public crate architecture overview: durable edge bridge for Lunsaran uploads.](assets/images/architecture-overview.png){ width="800" }
+/// caption
+Taytay public crate architecture overview.
+///
+
+The diagram shows the public crate boundary: source adapters publish durable,
+checksummed jobs locally; bounded Taytay workers use the `ArtifactUploader`
+port and published Entregar client; Lunsaran authorizes the upload session;
+and Brutus owns resumable TUS byte transfer and provider execution.
+
 
 ## What the crate gives you
 

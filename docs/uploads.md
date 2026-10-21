@@ -5,10 +5,15 @@ description: Connect Taytay to Lunsaran and Brutus
 
 # Uploads and TUS
 
+This page explains the upload contract for integrators. You normally call
+`EntregarUploader` or implement `ArtifactUploader`; you do not implement the
+Lunsaran HTTP and TUS sequence in application code.
+
 Taytay's transfer boundary has two layers:
 
-1. A Lunsaran client creates an organization/project-scoped upload session.
-2. A TUS client writes the artifact bytes using the server's committed offset.
+1. The Entregar client requests an organization/project-scoped upload session.
+2. The Entregar client writes artifact bytes through Brutus using the server's
+   committed TUS offset.
 
 The public `EntregarUploader` combines these layers through the published
 `lunsaran-entregar` client. Custom integrators can implement the same behavior
@@ -29,9 +34,11 @@ to the same logical artifact rather than creating a second session.
 
 ## Offset recovery
 
-After an interruption, issue `HEAD`, seek the local file to the returned
-offset, and continue with `PATCH`. Never assume that the number of bytes sent
-by a failed request equals the number committed by Brutus.
+After an interruption, the Entregar client issues `HEAD`, seeks the local file
+to the returned offset, and continues with `PATCH`. Never assume that the
+number of bytes sent by a failed request equals the number committed by
+Brutus. If you implement `ArtifactUploader`, preserve this behavior behind the
+uploader boundary.
 
 ```mermaid
 flowchart TD

@@ -1,11 +1,15 @@
 [project]
 site_name = "Taytay"
 site_url = "https://kanutocd.github.io/taytay"
+site_description = "Durable Rust building blocks for Linux edge uploads to Lunsaran"
+site_author = "Kenneth C. Demanawa"
+copyright = "Copyright &copy; 2026 Kenneth C. Demanawa"
 repo_url = "https://github.com/kanutocd/taytay"
 repo_name = "kanutocd/taytay"
 docs_dir = "docs"
 site_dir = "site"
 edit_uri = ""
+strict = true
 
 nav = [
   { "Overview" = "index.md" },
@@ -28,10 +32,16 @@ variant = "classic"
 language = "en"
 logo = "branding/taytay-logo.svg"
 features = [
+  "announce.dismiss",
+  "content.code.copy",
+  "content.code.select",
+  "content.footnote.tooltips",
   "navigation.instant",
   "navigation.tracking",
   "navigation.expand",
   "navigation.footer",
+  "navigation.path",
+  "search.highlight",
   "search.suggest",
   "header.autohide",
 ]
@@ -80,3 +90,14 @@ pymdownx.keys = {}
 pymdownx.magiclink = {}
 pymdownx.mark = {}
 pymdownx.smartsymbols = {}
+
+[project.markdown_extensions.pymdownx.blocks.caption]
+
+[project.markdown_extensions.pymdownx.tasklist]
+custom_checkbox = true
+
+[project.markdown_extensions.tables]
+
+[project.plugins.glightbox]
+auto_caption = true
+auto_themed = true

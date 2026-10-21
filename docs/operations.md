@@ -5,9 +5,14 @@ description: Configure, deploy, and observe Taytay
 
 # Operations
 
+This guide is for operators deploying the Taytay reference binary on a Linux
+edge host. It covers configuration, service execution, diagnostics, and
+acceptance checks. It does not provision Lunsaran organizations, projects, or
+device credentials.
+
 ## Configuration
 
-The reference binary reads TOML:
+The reference binary reads a TOML file. The following fields are required:
 
 ```toml
 spool_dir = "/var/lib/taytay/spool"
@@ -18,6 +23,16 @@ organization_id = "00000000-0000-0000-0000-000000000001"
 project_id = "00000000-0000-0000-0000-000000000002"
 token_file = "/etc/taytay/lunsaran.token"
 ```
+
+| Field | Required | Meaning and validation |
+| --- | --- | --- |
+| `spool_dir` | Yes | Persistent local artifact and ledger directory. |
+| `quota_bytes` | No | Maximum spool size. Defaults to 10 GiB. Must be positive. |
+| `upload_workers` | No | Concurrent workers. Defaults to 2. Must be positive. |
+| `lunsaran_base_url` | Yes | HTTP(S) origin without credentials, query, or fragment. |
+| `organization_id` | Yes | UUID used for upload-session scope. |
+| `project_id` | Yes | UUID used for upload-session scope. |
+| `token_file` | Yes | Protected, non-empty credential file with no parent traversal. |
 
 Use a protected token file. Taytay rejects empty secrets, parent traversal in
 the configured token path, credential-bearing base URLs, query strings, and
