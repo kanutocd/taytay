@@ -28,12 +28,13 @@ owns the TUS data plane and provider execution.
 
 ## Reference implementation
 
-[`usb-camera-taytay`](https://github.com/kanutocd/usb-camera-taytay) is Taytay's
-reference implementation: a Linux Rust CLI that publishes completed files and
-captured V4L2 USB-camera frames into Taytay's durable spool. Read its
-[consumer guide](https://kanutocd.github.io/usb-camera-taytay/) when you need a
-concrete source application, while using this site for Taytay's reusable crate
-contracts and operational boundaries.
+[`usb-camera-taytay` repository](https://github.com/kanutocd/usb-camera-taytay)
+is Taytay's reference implementation, and its
+[GitHub Pages consumer guide](https://kanutocd.github.io/usb-camera-taytay/)
+shows a Linux Rust CLI that publishes completed files and captured V4L2
+USB-camera frames into Taytay's durable spool. Use it when you need a concrete
+source application, while using this site for Taytay's reusable crate contracts
+and operational boundaries.
 
 ## The name
 

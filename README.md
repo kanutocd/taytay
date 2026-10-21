@@ -24,10 +24,12 @@ Lunsaran owns identity and project authorization, while Brutus owns TUS byte
 transfer and provider execution.
 
 [`usb-camera-taytay`](https://github.com/kanutocd/usb-camera-taytay) is the
-reference implementation. It is a Linux Rust CLI that demonstrates filesystem
-ingestion and V4L2 USB-camera capture feeding Taytay's durable spool. Use it as
-the smallest complete example of a source application; Taytay itself remains
-the reusable library and upload boundary.
+reference implementation, with a dedicated
+[GitHub Pages guide](https://kanutocd.github.io/usb-camera-taytay/). It is a
+Linux Rust CLI that demonstrates filesystem ingestion and V4L2 USB-camera
+capture feeding Taytay's durable spool. Use it as the smallest complete example
+of a source application; Taytay itself remains the reusable library and upload
+boundary.
 
 *Taytay* is a Hiligaynon word for “bridge”, describing the crate’s role between
 edge sources and the Lunsaran platform.
