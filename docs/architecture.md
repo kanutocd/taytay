@@ -5,6 +5,13 @@ description: Taytay ownership boundaries and upload lifecycle
 
 # Architecture
 
+![Taytay public crate architecture](architecture-diagram.svg)
+
+The diagram shows the public crate boundary: source adapters publish durable,
+checksummed jobs locally; bounded Taytay workers use the `ArtifactUploader`
+port and published Entregar client; Lunsaran authorizes the upload session;
+and Brutus owns resumable TUS byte transfer and provider execution.
+
 Taytay separates source acquisition, local durability, and remote transfer.
 This lets an integrator replace a camera or transport without changing the
 durability contract.

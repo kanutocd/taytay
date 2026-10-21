@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg viewBox="0 0 960 600" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="architecture-title architecture-desc" id="architecture-diagram-root">
+        <title id="architecture-title">Taytay public crate architecture</title>
+        <desc id="architecture-desc">Source adapters publish immutable artifacts into Taytay's durable spool. Bounded upload workers use the Entregar client to request an authorized Lunsaran session and transfer resumable bytes through Brutus TUS.</desc>
+        <defs>
+      <style>#architecture-diagram-root { --paper: #f5f5f5;
+      --paper-2: #ececec;
+      --ink: #2d3142;
+      --muted: #4f5d75;
+      --soft: #5a6580;
+      --accent: #bf4520;
+      --link: #2e5aa8;
+      --font-sans: 'Geist', system-ui, sans-serif;
+      --font-serif: 'Instrument Serif', serif;
+      --font-mono: 'Geist Mono', ui-monospace, monospace; }
+      #architecture-diagram-root { color: var(--ink); font-family: var(--font-sans); }
+      #architecture-diagram-root .diagram-container { overflow-x: auto; width: 100%; }
+      @media print {
+#architecture-diagram-root .diagram-container { overflow-x: visible; }
+}</style>
+          <pattern id="architecture-diagram-dots" width="22" height="22" patternUnits="userSpaceOnUse">
+            <circle cx="1" cy="1" r="0.9" fill="#2d3142" fill-opacity="0.10"/>
+          </pattern>
+          <marker id="architecture-diagram-arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker>
+          <marker id="architecture-diagram-arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#bf4520"/></marker>
+          <marker id="architecture-diagram-arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#2e5aa8"/></marker>
+        </defs>
+
+        <rect width="100%" height="100%" fill="#f5f5f5"/>
+        <rect width="100%" height="100%" fill="url(#architecture-diagram-dots)" opacity="0.55"/>
+
+        <!-- Trust boundary: Taytay's local edge runtime -->
+        <rect x="36" y="104" width="500" height="330" rx="8" fill="#2d3142" stroke="#2d3142" stroke-width="0.8" fill-opacity="0.02" stroke-opacity="0.10"/>
+        <rect x="52" y="108" width="164" height="12" rx="2" fill="#f5f5f5"/>
+        <text x="134" y="117" fill="#5a6580" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.14em">LINUX EDGE · TAYTAY</text>
+
+        <!-- Arrows first: orthogonal, behind nodes -->
+        <line x1="164" y1="260" x2="212" y2="260" stroke="#bf4520" stroke-width="1.4" marker-end="url(#architecture-diagram-arrow-accent)"/>
+        <line x1="356" y1="260" x2="404" y2="260" stroke="#bf4520" stroke-width="1.4" marker-end="url(#architecture-diagram-arrow-accent)"/>
+        <path d="M 536,244 H 592 Q 600,244 600,236 V 194" fill="none" stroke="#2e5aa8" stroke-width="1.2" marker-end="url(#architecture-diagram-arrow-link)"/>
+        <path d="M 536,276 H 592 Q 600,276 600,284 V 326" fill="none" stroke="#bf4520" stroke-width="1.4" marker-end="url(#architecture-diagram-arrow-accent)"/>
+        <path d="M 744,194 H 792 Q 800,194 800,202 V 236" fill="none" stroke="#4f5d75" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#architecture-diagram-arrow)"/>
+        <path d="M 744,326 H 792 Q 800,326 800,318 V 284" fill="none" stroke="#4f5d75" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#architecture-diagram-arrow)"/>
+
+        <!-- Arrow labels with opaque masks -->
+        <rect x="168" y="240" width="48" height="12" rx="2" fill="#f5f5f5"/>
+        <text x="192" y="249" fill="#bf4520" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">PUBLISH</text>
+        <rect x="360" y="240" width="48" height="12" rx="2" fill="#f5f5f5"/>
+        <text x="384" y="249" fill="#bf4520" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">SCHEDULE</text>
+        <rect x="548" y="212" width="64" height="12" rx="2" fill="#f5f5f5"/>
+        <text x="580" y="221" fill="#2e5aa8" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">SESSION</text>
+        <rect x="548" y="292" width="48" height="12" rx="2" fill="#f5f5f5"/>
+        <text x="572" y="301" fill="#bf4520" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">TUS</text>
+        <rect x="748" y="204" width="80" height="12" rx="2" fill="#f5f5f5"/>
+        <text x="788" y="213" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">SCOPE / ID</text>
+        <rect x="748" y="296" width="64" height="12" rx="2" fill="#f5f5f5"/>
+        <text x="780" y="305" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">OFFSET</text>
+
+        <!-- Nodes -->
+        <rect x="52" y="228" width="112" height="64" rx="6" fill="#4f5d75" stroke="#5a6580" stroke-width="1" fill-opacity="0.10"/>
+        <rect x="60" y="236" width="36" height="12" rx="2" fill="none" stroke="#5a6580" stroke-width="0.8" stroke-opacity="0.40"/>
+        <text x="78" y="245" fill="#5a6580" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">INPUT</text>
+        <text x="108" y="264" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Source adapter</text>
+        <text x="108" y="280" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">files · V4L2 · RTSP</text>
+
+        <rect x="212" y="228" width="144" height="64" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+        <rect x="220" y="236" width="40" height="12" rx="2" fill="none" stroke="#2d3142" stroke-width="0.8" stroke-opacity="0.40"/>
+        <text x="240" y="245" fill="#2d3142" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">STORE</text>
+        <text x="284" y="264" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Spool + ledger</text>
+        <text x="284" y="280" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">atomic · checksummed</text>
+
+        <rect x="404" y="228" width="132" height="64" rx="6" fill="#bf4520" stroke="#bf4520" stroke-width="1" fill-opacity="0.08"/>
+        <rect x="412" y="236" width="44" height="12" rx="2" fill="none" stroke="#bf4520" stroke-width="0.8" stroke-opacity="0.50"/>
+        <text x="434" y="245" fill="#bf4520" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">CORE</text>
+        <text x="470" y="264" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Scheduler</text>
+        <text x="470" y="280" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">retry · resume · cancel</text>
+
+        <rect x="600" y="162" width="144" height="64" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+        <rect x="608" y="170" width="40" height="12" rx="2" fill="none" stroke="#2d3142" stroke-width="0.8" stroke-opacity="0.40"/>
+        <text x="628" y="179" fill="#2d3142" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">CLIENT</text>
+        <text x="672" y="198" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">EntregarUploader</text>
+        <text x="672" y="214" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">ArtifactUploader port</text>
+
+        <rect x="600" y="294" width="144" height="64" rx="6" fill="#2d3142" stroke="#4f5d75" stroke-width="1" fill-opacity="0.05"/>
+        <rect x="608" y="302" width="40" height="12" rx="2" fill="none" stroke="#4f5d75" stroke-width="0.8" stroke-opacity="0.50"/>
+        <text x="628" y="311" fill="#4f5d75" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">API</text>
+        <text x="672" y="330" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Lunsaran</text>
+        <text x="672" y="346" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">identity · project scope</text>
+
+        <rect x="800" y="228" width="120" height="64" rx="6" fill="#2d3142" stroke="#4f5d75" stroke-width="1" fill-opacity="0.05"/>
+        <rect x="808" y="236" width="36" height="12" rx="2" fill="none" stroke="#4f5d75" stroke-width="0.8" stroke-opacity="0.50"/>
+        <text x="826" y="245" fill="#4f5d75" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">DATA</text>
+        <text x="860" y="264" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Brutus</text>
+        <text x="860" y="280" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">TUS · provider</text>
+
+        <line x1="36" y1="458" x2="924" y2="458" stroke="#2d3142" stroke-width="0.8" stroke-opacity="0.10"/>
+        <text x="36" y="476" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.18em">OWNERSHIP</text>
+        <text x="36" y="500" fill="#4f5d75" font-size="9" font-family="'Geist', sans-serif">Taytay: durable edge state and orchestration</text>
+        <text x="36" y="520" fill="#4f5d75" font-size="9" font-family="'Geist', sans-serif">Lunsaran: authorization and upload-session policy</text>
+        <text x="36" y="540" fill="#4f5d75" font-size="9" font-family="'Geist', sans-serif">Brutus: committed TUS offsets and provider execution</text>
+        <line x1="620" y1="500" x2="648" y2="500" stroke="#bf4520" stroke-width="1.4" marker-end="url(#architecture-diagram-arrow-accent)"/>
+        <text x="660" y="503" fill="#4f5d75" font-size="9" font-family="'Geist', sans-serif">durable primary flow</text>
+        <line x1="620" y1="524" x2="648" y2="524" stroke="#2e5aa8" stroke-width="1.2" marker-end="url(#architecture-diagram-arrow-link)"/>
+        <text x="660" y="527" fill="#4f5d75" font-size="9" font-family="'Geist', sans-serif">control-plane request</text>
+      </svg>
