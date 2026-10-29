@@ -12,6 +12,7 @@
 [![Docs](https://img.shields.io/badge/docs-GitHub%20Pages-2563eb)](https://kanutocd.github.io/taytay/)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 [![Rust](https://img.shields.io/badge/rust-1.85%2B-orange.svg?logo=rust)](https://www.rust-lang.org/)
+[![XERJ Corpus Hub contributor](https://hub.xerj.org/contributors/kanutocd/badge.svg)](https://hub.xerj.org/contributors/kanutocd)
 
 Taytay is a Rust crate for Linux edge applications that need to deliver local
 or device-produced artifacts to Lunsaran reliably. It provides durable local
